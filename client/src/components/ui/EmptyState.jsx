@@ -10,40 +10,22 @@ export default function EmptyState({
   className = '',
 }) {
   return (
-    <div className={`flex flex-col items-center justify-center text-center p-8 sm:p-12 ${className}`}>
-      {/* Hand-crafted flat spot illustration with brand swap motif */}
-      <div className="w-28 h-28 mb-5 relative flex items-center justify-center">
-        <svg viewBox="0 0 120 120" className="w-full h-full fill-none" xmlns="http://www.w3.org/2000/svg">
-          {/* Subtle back circles */}
-          <circle cx="48" cy="60" r="32" fill="#E6F6F3" />
-          <circle cx="72" cy="60" r="32" fill="#FFF1DB" />
-          
-          {/* Center overlap outline */}
-          <circle cx="48" cy="60" r="32" stroke="#0F766E" strokeWidth="1.5" strokeDasharray="3 3" opacity="0.4" />
-          <circle cx="72" cy="60" r="32" stroke="#9A5B00" strokeWidth="1.5" strokeDasharray="3 3" opacity="0.4" />
-          
-          {/* Two-way exchange arrows motif */}
-          <path
-            d="M38 52h40m0 0l-7-7m7 7l-7 7"
-            stroke="#0F766E"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          <path
-            d="M82 68H42m0 0l7-7m-7 7l7 7"
-            stroke="#F2674A"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
+    <div className={`flex flex-col items-start justify-center text-left py-10 px-1 sm:py-12 ${className}`}>
+      {/* Brand swap mark, set as a framed glyph */}
+      <div
+        className="w-12 h-12 mb-5 flex items-center justify-center border border-ink-primary text-ink-primary"
+        aria-hidden="true"
+      >
+        <svg viewBox="0 0 24 24" className="w-6 h-6 fill-none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M4 8h13m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="square" />
+          <path d="M20 16H7m0 0l4-4m-4 4l4 4" stroke="#0F766E" strokeWidth="1.6" strokeLinecap="square" />
         </svg>
       </div>
 
-      <h3 className="font-heading font-semibold text-lg text-ink-primary">
+      <h3 className="font-display font-medium text-display-sm text-ink-primary max-w-lg">
         {title}
       </h3>
-      <p className="text-sm text-ink-secondary max-w-sm mt-1.5 mb-6">
+      <p className="text-base text-ink-secondary max-w-md mt-2 mb-6 leading-relaxed">
         {description}
       </p>
 
@@ -55,4 +37,3 @@ export default function EmptyState({
     </div>
   );
 }
-

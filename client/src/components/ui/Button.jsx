@@ -14,23 +14,23 @@ export default function Button({
   ...props
 }) {
   const baseStyles =
-    'inline-flex items-center justify-center font-heading font-medium rounded-button transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-1 select-none disabled:opacity-50 disabled:cursor-not-allowed';
+    'inline-flex items-center justify-center font-heading font-semibold tracking-[0.005em] rounded-button transition-colors duration-150 focus:outline-none select-none disabled:opacity-45 disabled:cursor-not-allowed';
 
   const variants = {
     primary:
-      'bg-brand-teal text-white hover:bg-brand-teal-hover focus:ring-brand-teal/40 active:bg-brand-teal-dark',
+      'bg-ink-primary text-white border border-ink-primary hover:bg-brand-teal-dark hover:border-brand-teal-dark active:bg-brand-teal-dark',
     coral:
-      'bg-brand-coral text-white hover:bg-brand-coral-hover focus:ring-brand-coral/40 active:bg-[#C9472B]',
+      'bg-ink-primary text-white border border-ink-primary hover:bg-brand-teal-dark hover:border-brand-teal-dark active:bg-brand-teal-dark',
     secondary:
-      'bg-white text-ink-primary border border-canvas-border hover:bg-canvas-subtle hover:border-canvas-border-dark focus:ring-brand-teal/20',
+      'bg-transparent text-ink-primary border border-ink-primary/80 hover:bg-ink-primary hover:text-white',
     ghost:
-      'bg-transparent text-ink-secondary hover:text-ink-primary hover:bg-canvas-subtle focus:ring-brand-teal/20',
+      'bg-transparent text-ink-secondary border border-transparent hover:text-ink-primary hover:bg-canvas-subtle',
     danger:
-      'bg-status-danger text-white hover:bg-[#991B1B] focus:ring-status-danger/40',
+      'bg-status-danger text-white border border-status-danger hover:bg-[#8F1C13] hover:border-[#8F1C13]',
     'danger-ghost':
-      'bg-transparent text-status-danger hover:bg-status-danger-bg focus:ring-status-danger/20',
+      'bg-transparent text-status-danger border border-transparent hover:bg-status-danger-bg',
     tealTint:
-      'bg-brand-teal-surface text-brand-teal border border-teach-border hover:bg-teach-bg focus:ring-brand-teal/20',
+      'bg-transparent text-brand-teal border border-brand-teal/60 hover:bg-brand-teal hover:text-white',
   };
 
   const sizes = {

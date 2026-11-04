@@ -9,7 +9,7 @@ export default function Tabs({
 }) {
   if (variant === 'segmented') {
     return (
-      <div className={`inline-flex p-1 bg-canvas-subtle border border-canvas-border rounded-button ${className}`}>
+      <div className={`inline-flex border border-ink-primary rounded-button max-w-full overflow-x-auto ${className}`}>
         {tabs.map((tab) => {
           const isActive = tab.id === activeTab;
           return (
@@ -17,19 +17,19 @@ export default function Tabs({
               key={tab.id}
               type="button"
               onClick={() => onChange(tab.id)}
-              className={`px-3 py-1.5 text-xs font-heading font-medium rounded-button transition-colors flex items-center gap-1.5 select-none ${
+              className={`px-3 py-1.5 text-sm font-heading font-semibold whitespace-nowrap transition-colors flex items-center gap-1.5 select-none border-r border-ink-primary last:border-r-0 ${
                 isActive
-                  ? 'bg-white text-ink-primary shadow-soft'
-                  : 'text-ink-secondary hover:text-ink-primary'
+                  ? 'bg-ink-primary text-white'
+                  : 'text-ink-secondary hover:text-ink-primary hover:bg-canvas-subtle'
               }`}
             >
               {tab.label}
               {tab.count !== undefined && (
                 <span
-                  className={`px-1.5 py-0.2 rounded-full text-[10px] ${
+                  className={`text-xs numerals ${
                     isActive
-                      ? 'bg-brand-teal-surface text-brand-teal'
-                      : 'bg-canvas-card text-ink-muted'
+                      ? 'text-white/75'
+                      : 'text-ink-muted'
                   }`}
                 >
                   {tab.count}
@@ -44,7 +44,7 @@ export default function Tabs({
 
   // Underline variant (default)
   return (
-    <div className={`border-b border-canvas-border flex space-x-6 ${className}`}>
+    <div className={`border-b border-canvas-border flex gap-6 overflow-x-auto ${className}`}>
       {tabs.map((tab) => {
         const isActive = tab.id === activeTab;
         return (
@@ -52,26 +52,26 @@ export default function Tabs({
             key={tab.id}
             type="button"
             onClick={() => onChange(tab.id)}
-            className={`pb-3 text-sm font-heading font-semibold transition-colors relative flex items-center gap-2 select-none ${
+            className={`pb-3 pt-1 text-[15px] font-heading font-semibold whitespace-nowrap transition-colors relative flex items-center gap-2 select-none ${
               isActive
-                ? 'text-brand-teal'
-                : 'text-ink-secondary hover:text-ink-primary'
+                ? 'text-ink-primary'
+                : 'text-ink-muted hover:text-ink-primary'
             }`}
           >
             <span>{tab.label}</span>
             {tab.count !== undefined && (
               <span
-                className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                className={`font-display italic text-base numerals ${
                   isActive
-                    ? 'bg-teach-bg text-teach-text'
-                    : 'bg-canvas-subtle text-ink-muted'
+                    ? 'text-brand-teal'
+                    : 'text-ink-muted'
                 }`}
               >
                 {tab.count}
               </span>
             )}
             {isActive && (
-              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-teal rounded-full" />
+              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-ink-primary" />
             )}
           </button>
         );

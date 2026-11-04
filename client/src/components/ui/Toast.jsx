@@ -46,27 +46,27 @@ export const ToastProvider = ({ children }) => {
     <ToastContext.Provider value={{ showToast: addToast, success, error, info }}>
       {children}
       {/* Toast container */}
-      <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none px-4 sm:px-0">
+      <div className="fixed bottom-20 md:bottom-6 right-0 md:right-6 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none px-4 md:px-0">
         {toasts.map((toast) => {
           const typeConfig = {
             success: {
               icon: CheckCircle2,
-              style: 'bg-white border-status-success/30 text-ink-primary',
+              style: 'bg-canvas-card border-status-success text-ink-primary',
               iconStyle: 'text-status-success',
             },
             error: {
               icon: AlertCircle,
-              style: 'bg-white border-status-danger/30 text-ink-primary',
+              style: 'bg-canvas-card border-status-danger text-ink-primary',
               iconStyle: 'text-status-danger',
             },
             info: {
               icon: Info,
-              style: 'bg-white border-brand-teal/30 text-ink-primary',
+              style: 'bg-canvas-card border-brand-teal text-ink-primary',
               iconStyle: 'text-brand-teal',
             },
           }[toast.type] || {
             icon: Info,
-            style: 'bg-white border-canvas-border text-ink-primary',
+            style: 'bg-canvas-card border-ink-primary text-ink-primary',
             iconStyle: 'text-brand-teal',
           };
 
@@ -75,15 +75,15 @@ export const ToastProvider = ({ children }) => {
           return (
             <div
               key={toast.id}
-              className={`pointer-events-auto flex items-start gap-3 p-3.5 rounded-card border shadow-elevated transition-all duration-150 ${typeConfig.style}`}
+              className={`pointer-events-auto flex items-start gap-3 p-3.5 rounded-card border-l-4 shadow-elevated animate-rise-in ${typeConfig.style}`}
               role="status"
             >
               <IconComponent className={`w-5 h-5 flex-shrink-0 mt-0.5 ${typeConfig.iconStyle}`} strokeWidth={1.75} />
-              <div className="flex-1 text-sm font-medium">{toast.message}</div>
+              <div className="flex-1 text-[15px] font-medium leading-snug">{toast.message}</div>
               <button
                 type="button"
                 onClick={() => removeToast(toast.id)}
-                className="text-ink-muted hover:text-ink-primary p-0.5 rounded focus:outline-none"
+                className="text-ink-muted hover:text-ink-primary p-0.5 rounded-button focus:outline-none"
                 aria-label="Dismiss toast"
               >
                 <X className="w-4 h-4" />

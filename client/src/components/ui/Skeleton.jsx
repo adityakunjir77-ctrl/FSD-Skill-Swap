@@ -5,13 +5,13 @@ export default function Skeleton({
   variant = 'text',
   count = 1,
 }) {
-  const baseStyle = 'animate-pulse bg-[#E4E7E5] rounded';
+  const baseStyle = 'animate-pulse bg-canvas-subtle rounded-card';
 
   const variants = {
     text: 'h-4 w-full',
     title: 'h-6 w-3/4',
-    avatar: 'w-10 h-10 rounded-full',
-    pill: 'h-6 w-16 rounded-full',
+    avatar: 'w-10 h-10 rounded-card',
+    pill: 'h-6 w-16 rounded-button',
     card: 'h-36 w-full rounded-card',
     button: 'h-10 w-24 rounded-button',
   };

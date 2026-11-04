@@ -10,10 +10,10 @@ export default function StatTile({
   onClick,
 }) {
   const iconVariants = {
-    default: 'text-brand-teal bg-brand-teal-surface border-teach-border',
-    coral: 'text-brand-coral bg-brand-coral-tint border-[#FED7CE]',
-    amber: 'text-learn-text bg-learn-bg border-learn-border',
-    success: 'text-status-success bg-status-success-bg border-[#BBF7D0]',
+    default: 'text-brand-teal',
+    coral: 'text-ink-primary',
+    amber: 'text-learn-text',
+    success: 'text-status-success',
   };
 
   const currentIconStyle = iconVariants[variant] || iconVariants.default;
@@ -21,27 +21,27 @@ export default function StatTile({
   return (
     <div
       onClick={onClick}
-      className={`bg-canvas-card border border-canvas-border rounded-card p-4 transition-colors ${
-        onClick ? 'cursor-pointer hover:border-canvas-border-dark' : ''
+      className={`border-t-2 border-ink-primary pt-3 pb-1 transition-colors ${
+        onClick ? 'cursor-pointer hover:border-brand-teal' : ''
       } ${className}`}
     >
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-medium text-ink-muted uppercase tracking-wider">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-sm font-semibold text-ink-secondary">
           {label}
         </span>
         {Icon && (
-          <div className={`w-8 h-8 rounded-lg flex items-center justify-center border ${currentIconStyle}`}>
+          <div className={`flex items-center justify-center ${currentIconStyle}`} aria-hidden="true">
             <Icon className="w-4 h-4" strokeWidth={1.75} />
           </div>
         )}
       </div>
 
-      <div className="mt-2 flex items-baseline gap-2">
-        <span className="font-heading font-bold text-2xl text-ink-primary">
+      <div className="mt-1 flex items-baseline gap-2">
+        <span className="font-display font-medium text-display-md text-ink-primary numerals">
           {value}
         </span>
         {subtext && (
-          <span className="text-xs text-ink-secondary">{subtext}</span>
+          <span className="text-sm text-ink-muted">{subtext}</span>
         )}
       </div>
     </div>
