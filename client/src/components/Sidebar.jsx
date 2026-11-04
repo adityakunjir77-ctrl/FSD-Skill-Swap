@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Avatar from './ui/Avatar';
@@ -14,6 +14,7 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
+  X,
   ArrowRightLeft,
 } from 'lucide-react';
 
@@ -36,7 +37,16 @@ export default function Sidebar({
   onToggleCollapse,
   unreadRequests = 0,
   unreadMessages = 0,
+  variant = 'rail',
+  onClose,
 }) {
+  const isDrawer = variant === 'drawer';
+  const closeButtonRef = useRef(null);
+
+  // In the mobile drawer, move keyboard focus to the close button when it opens
+  useEffect(() => {
+    if (isDrawer && closeButtonRef.current) closeButtonRef.current.focus();
+  }, [isDrawer]);
   const { user, isAdmin, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -68,9 +78,14 @@ export default function Sidebar({
 
   return (
     <aside
-      className={`hidden md:flex flex-col sticky top-0 h-screen bg-canvas border-r border-canvas-border transition-all duration-200 z-30 select-none ${
-        isCollapsed ? 'w-18' : 'w-60'
-      }`}
+      id={isDrawer ? 'mobile-navigation' : undefined}
+      className={
+        isDrawer
+          ? 'relative flex flex-col h-full w-72 max-w-[85vw] bg-canvas border-r border-ink-primary shadow-elevated select-none animate-drawer-in'
+          : `hidden md:flex flex-col sticky top-0 h-screen bg-canvas border-r border-canvas-border transition-all duration-200 z-30 select-none ${
+              isCollapsed ? 'w-18' : 'w-60'
+            }`
+      }
     >
       {/* Brand Header */}
       <div className="h-16 flex items-center justify-between px-4 border-b border-canvas-border flex-shrink-0">
@@ -103,7 +118,19 @@ export default function Sidebar({
           )}
         </NavLink>
 
-        {onToggleCollapse && !isCollapsed && (
+        {isDrawer && onClose && (
+          <button
+            ref={closeButtonRef}
+            type="button"
+            onClick={onClose}
+            className="p-1.5 -mr-1 rounded-button text-ink-muted hover:text-ink-primary hover:bg-canvas-subtle transition-colors"
+            aria-label="Close navigation"
+          >
+            <X className="w-5 h-5" strokeWidth={1.75} />
+          </button>
+        )}
+
+        {!isDrawer && onToggleCollapse && !isCollapsed && (
           <button
             type="button"
             onClick={onToggleCollapse}

@@ -14,7 +14,7 @@ import {
   ArrowRightLeft,
 } from 'lucide-react';
 
-export default function Navbar({ onToggleSidebar }) {
+export default function Navbar({ onToggleSidebar, isDrawerOpen = false }) {
   const { user, isAuthenticated, isAdmin, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -106,6 +106,8 @@ export default function Navbar({ onToggleSidebar }) {
             onClick={onToggleSidebar}
             className="md:hidden p-2 rounded-button text-ink-secondary hover:bg-canvas-subtle focus:outline-none"
             aria-label="Toggle Navigation"
+            aria-expanded={isDrawerOpen}
+            aria-controls="mobile-navigation"
           >
             <Menu className="w-5 h-5" />
           </button>

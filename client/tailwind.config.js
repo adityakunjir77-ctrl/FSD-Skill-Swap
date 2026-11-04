@@ -93,6 +93,10 @@ export default {
           from: { opacity: '0', transform: 'translateX(-2.5rem)' },
           to: { opacity: '1', transform: 'translateX(0)' },
         },
+        'drawer-in': {
+          from: { transform: 'translateX(-100%)' },
+          to: { transform: 'translateX(0)' },
+        },
         'swap-right': {
           from: { opacity: '0', transform: 'translateX(2.5rem)' },
           to: { opacity: '1', transform: 'translateX(0)' },
@@ -101,6 +105,7 @@ export default {
       animation: {
         'fade-in': 'fade-in 160ms ease-out',
         'rise-in': 'rise-in 220ms ease-out',
+        'drawer-in': 'drawer-in 200ms cubic-bezier(0.2, 0.7, 0.1, 1)',
         'swap-left': 'swap-left 700ms cubic-bezier(0.2, 0.7, 0.1, 1) both',
         'swap-right': 'swap-right 700ms cubic-bezier(0.2, 0.7, 0.1, 1) 120ms both',
       },
