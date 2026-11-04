@@ -52,9 +52,9 @@ export default function AuthLayout() {
             Reciprocal Learning
           </span>
 
-          <h3 className="mt-8 font-display font-medium text-display-lg text-white leading-[1.02] tracking-[-0.025em]">
+          <h3 className="mt-8 font-display font-medium text-display-md xl:text-display-lg text-white leading-[1.04] tracking-[-0.025em]">
             <span className="block">Teach what you love.</span>
-            <span className="block pl-10 xl:pl-16 italic text-brand-teal-tint">Learn what you need.</span>
+            <span className="block pl-8 xl:pl-14 text-white/90">Learn what you need.</span>
           </h3>
           <p className="text-base text-white/70 mt-6 leading-relaxed max-w-sm">
             No money, no subscriptions. Exchange direct 1-on-1 mentorship with community peers who value your skills.

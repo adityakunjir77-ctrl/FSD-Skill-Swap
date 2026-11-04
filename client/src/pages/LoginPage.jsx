@@ -74,20 +74,20 @@ export default function LoginPage() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h2 className="font-heading font-bold text-2xl text-ink-primary">
+      <div className="mb-8">
+        <h2 className="font-display font-medium text-display-md sm:text-display-lg tracking-[-0.025em] text-ink-primary">
           Sign In
         </h2>
-        <p className="text-xs text-ink-secondary mt-1">
+        <p className="text-base text-ink-secondary mt-2">
           Access your skill exchanges, sessions, and messages
         </p>
       </div>
 
       {/* Demo Account Quick-Fill Avatar Chips */}
-      <div className="mb-6 p-3 bg-canvas-subtle/80 border border-canvas-border rounded-card">
-        <div className="text-[11px] font-heading font-semibold text-ink-secondary mb-2 flex items-center justify-between">
+      <div className="mb-8 py-3 border-y border-canvas-border">
+        <div className="text-sm font-heading font-semibold text-ink-secondary mb-2.5 flex items-center justify-between">
           <span>Try a demo account:</span>
-          <span className="text-ink-muted text-[10px]">Click to fill</span>
+          <span className="text-ink-muted text-xs font-normal">Click to fill</span>
         </div>
         <div className="grid grid-cols-3 gap-2">
           {DEMO_ACCOUNTS.map((acc) => {
@@ -97,18 +97,18 @@ export default function LoginPage() {
                 key={acc.email}
                 type="button"
                 onClick={() => handleQuickFill(acc)}
-                className={`flex items-center gap-2 p-1.5 rounded-button border text-left transition-all ${
+                className={`flex items-center gap-2 p-1.5 rounded-button border text-left transition-colors ${
                   isSelected
-                    ? 'bg-white border-brand-teal ring-2 ring-teach-bg shadow-soft'
-                    : 'bg-white/80 border-canvas-border hover:bg-white hover:border-canvas-border-dark'
+                    ? 'bg-canvas-card border-ink-primary shadow-[inset_0_-2px_0_#0F766E]'
+                    : 'bg-transparent border-canvas-border-dark hover:bg-canvas-card hover:border-ink-primary'
                 }`}
               >
                 <Avatar name={acc.name} size="xs" />
                 <div className="min-w-0 flex-1">
-                  <div className="text-xs font-heading font-semibold text-ink-primary truncate">
+                  <div className="text-sm font-heading font-semibold text-ink-primary truncate">
                     {acc.name}
                   </div>
-                  <div className="text-[10px] text-ink-muted truncate">
+                  <div className="text-xs text-ink-muted truncate">
                     {acc.role}
                   </div>
                 </div>
@@ -119,7 +119,7 @@ export default function LoginPage() {
       </div>
 
       {errorMsg && (
-        <div className="mb-4 p-3 bg-status-danger-bg/40 border border-[#FECACA] rounded-button text-xs text-status-danger font-medium">
+        <div className="mb-5 py-2.5 px-3 bg-status-danger-bg border-l-2 border-status-danger rounded-button text-sm text-status-danger font-medium" role="alert">
           {errorMsg}
         </div>
       )}
@@ -127,7 +127,7 @@ export default function LoginPage() {
       {/* Form */}
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-xs font-heading font-semibold text-ink-primary mb-1.5">
+          <label className="block text-sm font-heading font-semibold text-ink-primary mb-1.5">
             Email Address
           </label>
           <div className="relative">
@@ -139,14 +139,14 @@ export default function LoginPage() {
               value={formData.email}
               onChange={handleChange}
               placeholder="alex@example.com"
-              className="w-full pl-9 pr-3.5 py-2.5 bg-white border border-canvas-border rounded-input text-xs sm:text-sm text-ink-primary placeholder-ink-muted focus-ring transition-colors"
+              className="w-full pl-9 pr-3.5 py-3 bg-canvas-card border border-canvas-border-dark rounded-input hover:border-ink-muted text-[15px] text-ink-primary placeholder-ink-muted focus-ring transition-colors"
             />
           </div>
         </div>
 
         <div>
           <div className="flex items-center justify-between mb-1.5">
-            <label className="block text-xs font-heading font-semibold text-ink-primary">
+            <label className="block text-sm font-heading font-semibold text-ink-primary">
               Password
             </label>
           </div>
@@ -159,7 +159,7 @@ export default function LoginPage() {
               value={formData.password}
               onChange={handleChange}
               placeholder="••••••••"
-              className="w-full pl-9 pr-10 py-2.5 bg-white border border-canvas-border rounded-input text-xs sm:text-sm text-ink-primary placeholder-ink-muted focus-ring transition-colors"
+              className="w-full pl-9 pr-10 py-3 bg-canvas-card border border-canvas-border-dark rounded-input hover:border-ink-muted text-[15px] text-ink-primary placeholder-ink-muted focus-ring transition-colors"
             />
             <button
               type="button"
@@ -179,7 +179,7 @@ export default function LoginPage() {
         <Button
           type="submit"
           variant="primary"
-          size="md"
+          size="lg"
           loading={loading}
           icon={ArrowRight}
           iconPosition="right"
@@ -189,11 +189,11 @@ export default function LoginPage() {
         </Button>
       </form>
 
-      <div className="mt-6 text-center text-xs text-ink-secondary">
+      <div className="mt-6 text-sm text-ink-secondary">
         Don't have an account?{' '}
         <Link
           to="/register"
-          className="font-heading font-bold text-brand-teal hover:text-brand-teal-hover underline ml-1"
+          className="link-accent ml-1"
         >
           Register for free
         </Link>
