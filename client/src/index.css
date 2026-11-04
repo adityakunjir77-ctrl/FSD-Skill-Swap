@@ -49,6 +49,25 @@
     font-variant-numeric: lining-nums tabular-nums;
   }
 
+  /* Link-as-button styles, mirroring the Button component variants (for <Link> CTAs) */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 h-10 px-4 rounded-button border text-sm font-heading font-semibold tracking-[0.005em] transition-colors duration-150 select-none whitespace-nowrap;
+  }
+  .btn-sm {
+    @apply h-8 px-3 text-xs gap-1.5;
+  }
+  .btn-primary {
+    @apply bg-ink-primary border-ink-primary text-white hover:bg-brand-teal-dark hover:border-brand-teal-dark;
+  }
+  .btn-secondary {
+    @apply bg-transparent border-ink-primary/80 text-ink-primary hover:bg-ink-primary hover:text-white;
+  }
+
+  /* Open editorial section: a heavy top rule instead of a boxed card */
+  .section-open {
+    @apply border-t-2 border-ink-primary pt-4;
+  }
+
   /* Underlined text link in the accent colour */
   .link-accent {
     @apply text-brand-teal font-semibold underline decoration-brand-teal/30 underline-offset-4 hover:decoration-brand-teal transition-colors;

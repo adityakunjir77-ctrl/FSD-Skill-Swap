@@ -117,28 +117,30 @@ export default function SkillDirectoryPage() {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Header Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-canvas-border">
+      <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-5 pb-6 border-b border-ink-primary">
         <div>
-          <h1 className="font-heading font-bold text-2xl sm:text-3xl text-ink-primary flex items-center gap-2">
-            <Compass className="w-6 h-6 text-brand-teal" />
-            Skill Discovery Directory
-          </h1>
-          <p className="text-xs sm:text-sm text-ink-secondary mt-1">
+          <div className="flex items-baseline gap-3 sm:gap-4">
+            <span className="chapter-num text-display-sm sm:text-display-md leading-none" aria-hidden="true">1</span>
+            <h1 className="font-display font-medium text-display-sm sm:text-display-md tracking-[-0.02em] text-ink-primary">
+              Skill Discovery Directory
+            </h1>
+          </div>
+          <p className="text-base text-ink-secondary mt-2 max-w-2xl">
             Search, filter, and discover community peers offering skills you want to learn.
           </p>
         </div>
 
         {/* View Toggle (Grid vs List) */}
         <div className="flex items-center gap-2 self-start sm:self-auto">
-          <div className="flex items-center p-1 bg-canvas-subtle border border-canvas-border rounded-button">
+          <div className="flex items-center border border-ink-primary rounded-button">
             <button
               type="button"
               onClick={() => setViewMode('grid')}
-              className={`p-1.5 rounded text-xs font-medium transition-colors ${
+              className={`p-2 text-xs font-medium transition-colors ${
                 viewMode === 'grid'
-                  ? 'bg-white text-ink-primary shadow-soft'
+                  ? 'bg-ink-primary text-white'
                   : 'text-ink-muted hover:text-ink-primary'
               }`}
               title="Grid View"
@@ -149,9 +151,9 @@ export default function SkillDirectoryPage() {
             <button
               type="button"
               onClick={() => setViewMode('list')}
-              className={`p-1.5 rounded text-xs font-medium transition-colors ${
+              className={`p-2 text-xs font-medium transition-colors border-l border-ink-primary ${
                 viewMode === 'list'
-                  ? 'bg-white text-ink-primary shadow-soft'
+                  ? 'bg-ink-primary text-white'
                   : 'text-ink-muted hover:text-ink-primary'
               }`}
               title="List View"
@@ -164,7 +166,7 @@ export default function SkillDirectoryPage() {
       </div>
 
       {/* Search & Filter Controls Card */}
-      <div className="bg-canvas-card border border-canvas-border rounded-card p-4 shadow-soft space-y-3.5">
+      <div className="space-y-4">
         <div className="flex flex-col sm:flex-row gap-3">
           {/* Search Input */}
           <div className="relative flex-1">
@@ -174,7 +176,7 @@ export default function SkillDirectoryPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search by peer name, skill offered, or skill wanted..."
-              className="w-full pl-9 pr-8 py-2 text-xs sm:text-sm bg-canvas-subtle/70 border border-canvas-border rounded-input text-ink-primary placeholder-ink-muted focus-ring transition-colors"
+              className="w-full pl-9 pr-8 py-2.5 text-[15px] bg-canvas-card border border-canvas-border-dark rounded-input text-ink-primary placeholder-ink-muted hover:border-ink-muted focus-ring transition-colors"
             />
             {searchQuery && (
               <button
@@ -194,7 +196,7 @@ export default function SkillDirectoryPage() {
             <select
               value={selectedExperience}
               onChange={(e) => setSelectedExperience(e.target.value)}
-              className="px-3 py-2 text-xs sm:text-sm bg-canvas-subtle/70 border border-canvas-border rounded-input text-ink-primary focus-ring"
+              className="px-3 py-2.5 text-[15px] bg-canvas-card border border-canvas-border-dark rounded-input text-ink-primary hover:border-ink-muted focus-ring"
             >
               <option value="All">All Experience Levels</option>
               <option value="Beginner">Beginner</option>
@@ -206,14 +208,14 @@ export default function SkillDirectoryPage() {
         </div>
 
         {/* 12 Category Filter Pills */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none pt-1">
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 pt-1">
           <button
             type="button"
             onClick={() => handleCategorySelect('All')}
-            className={`px-3 py-1 rounded-full text-xs font-heading font-medium whitespace-nowrap transition-colors border select-none ${
+            className={`px-3 py-1.5 rounded-button text-sm font-heading font-semibold whitespace-nowrap transition-colors border select-none ${
               selectedCategory === 'All'
-                ? 'bg-brand-teal text-white border-transparent'
-                : 'bg-canvas-subtle text-ink-secondary border-canvas-border hover:bg-white'
+                ? 'bg-ink-primary text-white border-ink-primary'
+                : 'bg-transparent text-ink-secondary border-canvas-border-dark hover:border-ink-primary hover:text-ink-primary'
             }`}
           >
             All Categories
@@ -223,10 +225,10 @@ export default function SkillDirectoryPage() {
               key={cat.name}
               type="button"
               onClick={() => handleCategorySelect(cat.name)}
-              className={`px-3 py-1 rounded-full text-xs font-heading font-medium whitespace-nowrap transition-colors border select-none ${
+              className={`px-3 py-1.5 rounded-button text-sm font-heading font-semibold whitespace-nowrap transition-colors border select-none ${
                 selectedCategory === cat.name
-                  ? 'bg-brand-teal text-white border-transparent'
-                  : 'bg-canvas-subtle text-ink-secondary border-canvas-border hover:bg-white'
+                  ? 'bg-ink-primary text-white border-ink-primary'
+                  : 'bg-transparent text-ink-secondary border-canvas-border-dark hover:border-ink-primary hover:text-ink-primary'
               }`}
             >
               {cat.name}
@@ -261,7 +263,7 @@ export default function SkillDirectoryPage() {
             return (
               <div
                 key={userCard._id}
-                className="bg-canvas-card border border-canvas-border rounded-card p-5 shadow-soft hover:border-canvas-border-dark transition-all flex flex-col justify-between"
+                className="bg-canvas-card border border-canvas-border border-t-2 border-t-ink-primary rounded-card p-5 hover:border-ink-primary/50 hover:border-t-ink-primary transition-colors flex flex-col justify-between"
               >
                 <div>
                   {/* Top Row: Avatar, Name, Location, Rating */}
@@ -274,13 +276,13 @@ export default function SkillDirectoryPage() {
                         size="lg"
                       />
                       <div className="min-w-0">
-                        <h3 className="font-heading font-bold text-sm text-ink-primary truncate">
+                        <h3 className="font-display font-medium text-lg leading-snug text-ink-primary truncate">
                           {userCard.name}
                         </h3>
-                        <div className="flex items-center gap-2 text-[11px] text-ink-muted mt-0.5">
+                        <div className="flex items-center gap-2 text-xs text-ink-muted mt-0.5">
                           {userCard.location && (
                             <span className="flex items-center gap-0.5">
-                              <MapPin className="w-3 h-3" />
+                              <MapPin className="w-3 h-3" strokeWidth={1.75} />
                               {userCard.location}
                             </span>
                           )}
@@ -303,17 +305,16 @@ export default function SkillDirectoryPage() {
 
                   {/* Bio */}
                   {userCard.bio && (
-                    <p className="text-xs text-ink-secondary line-clamp-2 leading-relaxed mb-4">
+                    <p className="text-sm text-ink-secondary line-clamp-2 leading-relaxed mb-4">
                       {userCard.bio}
                     </p>
                   )}
 
                   {/* Skills Breakdown */}
-                  <div className="space-y-2.5 pt-3 border-t border-canvas-border/70 text-xs">
+                  <div className="space-y-3 pt-3 border-t border-canvas-border text-xs">
                     {/* Teaches */}
                     <div>
-                      <div className="text-[11px] font-heading font-semibold text-teach-text uppercase tracking-wider mb-1 flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-teach-text" />
+                      <div className="text-[13px] font-heading font-semibold text-teach-text mb-1.5 flex items-center gap-1">
                         Teaches:
                       </div>
                       <div className="flex flex-wrap gap-1">
@@ -325,7 +326,7 @@ export default function SkillDirectoryPage() {
                               </Pill>
                             ))}
                             {offers.length > 3 && (
-                              <span className="text-[10px] text-ink-muted font-medium self-center pl-1">
+                              <span className="text-xs text-ink-muted font-medium self-center pl-1">
                                 +{offers.length - 3} more
                               </span>
                             )}
@@ -338,8 +339,7 @@ export default function SkillDirectoryPage() {
 
                     {/* Wants to Learn */}
                     <div>
-                      <div className="text-[11px] font-heading font-semibold text-learn-text uppercase tracking-wider mb-1 flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-learn-text" />
+                      <div className="text-[13px] font-heading font-semibold text-learn-text mb-1.5 flex items-center gap-1">
                         Wants to learn:
                       </div>
                       <div className="flex flex-wrap gap-1">
@@ -351,7 +351,7 @@ export default function SkillDirectoryPage() {
                               </Pill>
                             ))}
                             {wants.length > 3 && (
-                              <span className="text-[10px] text-ink-muted font-medium self-center pl-1">
+                              <span className="text-xs text-ink-muted font-medium self-center pl-1">
                                 +{wants.length - 3} more
                               </span>
                             )}
@@ -365,7 +365,7 @@ export default function SkillDirectoryPage() {
                 </div>
 
                 {/* Card Actions */}
-                <div className="flex items-center gap-2 pt-4 mt-4 border-t border-canvas-border">
+                <div className="flex items-center gap-2 pt-4 mt-4">
                   <Button
                     variant="secondary"
                     size="sm"
@@ -389,7 +389,7 @@ export default function SkillDirectoryPage() {
         </div>
       ) : (
         /* LIST VIEW */
-        <div className="space-y-3">
+        <div className="border-t-2 border-ink-primary divide-y divide-canvas-border">
           {filteredUsers.map((userCard) => {
             const offers = userCard.skillsOffered || [];
             const wants = userCard.skillsWanted || [];
@@ -397,7 +397,7 @@ export default function SkillDirectoryPage() {
             return (
               <div
                 key={userCard._id}
-                className="bg-canvas-card border border-canvas-border rounded-card p-4 shadow-soft hover:border-canvas-border-dark transition-all flex flex-col md:flex-row md:items-center justify-between gap-4"
+                className="py-4 px-1 hover:bg-canvas-card transition-colors flex flex-col md:flex-row md:items-center justify-between gap-4"
               >
                 <div className="flex items-start md:items-center gap-3.5 min-w-0 flex-1">
                   <Avatar
@@ -408,13 +408,13 @@ export default function SkillDirectoryPage() {
                   />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="font-heading font-bold text-sm text-ink-primary truncate">
+                      <h3 className="font-display font-medium text-lg leading-snug text-ink-primary truncate">
                         {userCard.name}
                       </h3>
-                      <span className="text-[11px] text-ink-muted">
+                      <span className="text-sm text-ink-muted">
                         {userCard.location || 'Remote'}
                       </span>
-                      <span>•</span>
+                      <span className="text-ink-faint" aria-hidden="true">/</span>
                       <RatingStars
                         rating={userCard.averageRating || 5.0}
                         count={userCard.totalReviews || 0}
@@ -425,7 +425,7 @@ export default function SkillDirectoryPage() {
 
                     <div className="flex flex-wrap items-center gap-3 mt-1.5 text-xs">
                       <div className="flex items-center gap-1">
-                        <span className="text-teach-text font-semibold text-[11px]">Teaches:</span>
+                        <span className="text-teach-text font-semibold text-[13px]">Teaches:</span>
                         <div className="flex flex-wrap gap-1">
                           {offers.slice(0, 3).map((sk, idx) => (
                             <Pill key={idx} variant="teach" size="xs">
@@ -436,7 +436,7 @@ export default function SkillDirectoryPage() {
                       </div>
 
                       <div className="flex items-center gap-1">
-                        <span className="text-learn-text font-semibold text-[11px]">Wants:</span>
+                        <span className="text-learn-text font-semibold text-[13px]">Wants:</span>
                         <div className="flex flex-wrap gap-1">
                           {wants.slice(0, 3).map((sk, idx) => (
                             <Pill key={idx} variant="learn" size="xs">

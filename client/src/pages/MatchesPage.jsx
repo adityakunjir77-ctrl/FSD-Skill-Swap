@@ -48,15 +48,17 @@ export default function MatchesPage() {
       : matches;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Header Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-canvas-border">
+      <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-5 pb-6 border-b border-ink-primary">
         <div>
-          <h1 className="font-heading font-bold text-2xl sm:text-3xl text-ink-primary flex items-center gap-2">
-            <Sparkles className="w-6 h-6 text-brand-teal" />
-            Reciprocal Skill Matches
-          </h1>
-          <p className="text-xs sm:text-sm text-ink-secondary mt-1">
+          <div className="flex items-baseline gap-3 sm:gap-4">
+            <span className="chapter-num text-display-sm sm:text-display-md leading-none" aria-hidden="true">2</span>
+            <h1 className="font-display font-medium text-display-sm sm:text-display-md tracking-[-0.02em] text-ink-primary">
+              Reciprocal Skill Matches
+            </h1>
+          </div>
+          <p className="text-base text-ink-secondary mt-2 max-w-2xl">
             Complementary peer pairings calculated from your offered and wanted skills.
           </p>
         </div>

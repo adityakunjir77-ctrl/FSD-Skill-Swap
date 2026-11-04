@@ -82,34 +82,32 @@ export default function DashboardPage() {
   const ratingValue = user?.averageRating ? user.averageRating.toFixed(1) : '5.0';
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-10">
       {/* 1. GREETING HEADER */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-canvas-border">
+      <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-5 pb-6 border-b border-ink-primary">
         <div>
-          <h1 className="font-heading font-bold text-2xl sm:text-3xl text-ink-primary">
+          <h1 className="font-display font-medium text-display-sm sm:text-display-md tracking-[-0.02em] text-ink-primary">
             {getGreeting()}, {user?.name?.split(' ')[0] || 'Friend'}
           </h1>
-          <p className="text-xs sm:text-sm text-ink-secondary mt-1">
+          <p className="text-base text-ink-secondary mt-2">
             Here is your skill exchange activity and reciprocal matches for today.
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
-          <Link to="/discover">
-            <Button variant="secondary" size="sm" icon={Compass}>
-              Explore Directory
-            </Button>
+        <div className="flex flex-wrap items-center gap-2.5">
+          <Link to="/discover" className="btn btn-secondary">
+            <Compass className="w-4 h-4" strokeWidth={1.75} />
+            Explore Directory
           </Link>
-          <Link to="/matches">
-            <Button variant="coral" size="sm" icon={Sparkles}>
-              Find Matches
-            </Button>
+          <Link to="/matches" className="btn btn-primary">
+            <Sparkles className="w-4 h-4" strokeWidth={1.75} />
+            Find Matches
           </Link>
         </div>
       </div>
 
       {/* 2. COMPACT STAT STRIP */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-6 gap-y-6">
         <StatTile
           label="Skills Offered"
           value={user?.skillsOffered?.length || 0}
@@ -147,30 +145,30 @@ export default function DashboardPage() {
       </div>
 
       {/* 3. MAIN DASHBOARD SPLIT GRID: Left (Matches + Attention) | Right (Sessions + Actions) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-8 items-start">
         {/* Left Column (8 cols): Matches & Attention */}
-        <div className="lg:col-span-8 space-y-6">
+        <div className="lg:col-span-8 space-y-10">
           {/* NEEDS YOUR ATTENTION (if any pending requests) */}
           {pendingRequests.length > 0 && (
-            <div className="bg-canvas-card border border-[#FED7CE] rounded-card p-5 shadow-soft">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2 text-brand-coral font-heading font-semibold text-sm">
-                  <AlertCircle className="w-4 h-4" />
+            <div className="border-l-2 border-brand-teal bg-canvas-card pl-5 pr-4 py-4">
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                <div className="flex items-center gap-2 text-ink-primary font-heading font-semibold text-[15px]">
+                  <AlertCircle className="w-4 h-4 text-brand-teal" strokeWidth={1.75} />
                   <span>Needs your reply ({pendingRequests.length})</span>
                 </div>
                 <Link
                   to="/requests"
-                  className="text-xs font-heading font-semibold text-brand-teal hover:underline"
+                  className="text-sm font-heading font-semibold text-brand-teal hover:underline underline-offset-4"
                 >
                   View all requests →
                 </Link>
               </div>
 
-              <div className="space-y-2.5">
+              <div className="divide-y divide-canvas-border border-t border-canvas-border">
                 {pendingRequests.map((req) => (
                   <div
                     key={req._id}
-                    className="p-3 bg-white border border-canvas-border rounded-button flex items-center justify-between gap-3 text-xs"
+                    className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-sm"
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
                       <Avatar
@@ -196,10 +194,8 @@ export default function DashboardPage() {
                       </div>
                     </div>
 
-                    <Link to="/requests">
-                      <Button variant="primary" size="sm">
-                        Respond
-                      </Button>
+                    <Link to="/requests" className="btn btn-sm btn-primary self-start sm:self-auto">
+                      Respond
                     </Link>
                   </div>
                 ))}
@@ -208,21 +204,20 @@ export default function DashboardPage() {
           )}
 
           {/* BEST MATCHES */}
-          <div className="bg-canvas-card border border-canvas-border rounded-card p-5 shadow-soft">
-            <div className="flex items-center justify-between pb-4 border-b border-canvas-border mb-4">
+          <div className="section-open">
+            <div className="flex flex-wrap items-end justify-between gap-3 pb-4 mb-5">
               <div>
-                <h2 className="font-heading font-bold text-base text-ink-primary flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-brand-teal" />
+                <h2 className="font-display font-medium text-display-sm text-ink-primary tracking-[-0.015em]">
                   Your Best Reciprocal Matches
                 </h2>
-                <p className="text-xs text-ink-secondary mt-0.5">
+                <p className="text-sm text-ink-secondary mt-1">
                   Complementary peers paired automatically by your skill preferences.
                 </p>
               </div>
 
               <Link
                 to="/matches"
-                className="text-xs font-heading font-semibold text-brand-teal hover:text-brand-teal-hover flex items-center gap-1"
+                className="text-sm font-heading font-semibold text-brand-teal hover:underline underline-offset-4 flex items-center gap-1"
               >
                 All Matches <ArrowRight className="w-3.5 h-3.5" />
               </Link>
@@ -261,17 +256,16 @@ export default function DashboardPage() {
         </div>
 
         {/* Right Column (4 cols): Upcoming Sessions & Quick Actions */}
-        <div className="lg:col-span-4 space-y-6">
+        <div className="lg:col-span-4 space-y-10">
           {/* UPCOMING SESSIONS */}
-          <div className="bg-canvas-card border border-canvas-border rounded-card p-5 shadow-soft">
-            <div className="flex items-center justify-between pb-3 border-b border-canvas-border mb-3">
-              <h2 className="font-heading font-bold text-sm text-ink-primary flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-brand-teal" />
+          <div className="section-open">
+            <div className="flex items-baseline justify-between gap-3 pb-3">
+              <h2 className="font-display font-medium text-title text-ink-primary">
                 Upcoming Sessions
               </h2>
               <Link
                 to="/sessions"
-                className="text-xs font-heading font-semibold text-brand-teal hover:underline"
+                className="text-sm font-heading font-semibold text-brand-teal hover:underline underline-offset-4"
               >
                 View Agenda
               </Link>
@@ -280,31 +274,31 @@ export default function DashboardPage() {
             {loading ? (
               <Skeleton variant="text" count={3} />
             ) : sessions.length === 0 ? (
-              <div className="py-6 text-center text-xs text-ink-muted">
-                <Calendar className="w-8 h-8 text-canvas-border-dark mx-auto mb-2" strokeWidth={1.5} />
+              <div className="py-5 border-t border-canvas-border text-sm text-ink-muted">
+                <Calendar className="w-6 h-6 text-ink-faint mb-2" strokeWidth={1.5} />
                 No learning sessions booked yet.
                 <div className="mt-2">
                   <Link
                     to="/requests"
-                    className="text-brand-teal font-semibold hover:underline"
+                    className="link-accent"
                   >
                     Schedule via accepted requests →
                   </Link>
                 </div>
               </div>
             ) : (
-              <div className="space-y-2.5">
+              <div className="divide-y divide-canvas-border border-t border-canvas-border">
                 {sessions.map((ses) => (
                   <div
                     key={ses._id}
-                    className="p-3 bg-canvas-subtle/70 border border-canvas-border rounded-button text-xs"
+                    className="py-3 text-sm"
                   >
-                    <div className="font-heading font-semibold text-ink-primary truncate">
+                    <div className="font-display font-medium text-[17px] leading-snug text-ink-primary">
                       {ses.topic}
                     </div>
-                    <div className="flex items-center justify-between mt-1 text-ink-secondary text-[11px]">
+                    <div className="flex items-center justify-between gap-2 mt-1.5 text-ink-secondary text-xs numerals">
                       <span className="flex items-center gap-1">
-                        <Clock className="w-3 h-3 text-brand-teal" />
+                        <Clock className="w-3.5 h-3.5 text-brand-teal" strokeWidth={1.75} />
                         {ses.date} at {ses.time}
                       </span>
                       <Pill
@@ -321,42 +315,42 @@ export default function DashboardPage() {
           </div>
 
           {/* QUICK ACTIONS CARD */}
-          <div className="bg-canvas-card border border-canvas-border rounded-card p-5 shadow-soft">
-            <h2 className="font-heading font-bold text-sm text-ink-primary mb-3">
+          <div className="section-open">
+            <h2 className="font-display font-medium text-title text-ink-primary mb-2">
               Quick Shortcuts
             </h2>
-            <div className="space-y-2">
+            <div className="divide-y divide-canvas-border border-t border-canvas-border">
               <Link
                 to="/discover"
-                className="w-full flex items-center justify-between p-2.5 rounded-button bg-canvas-subtle hover:bg-canvas-border/50 text-xs font-heading font-semibold text-ink-primary transition-colors"
+                className="group w-full flex items-center justify-between py-3 text-[15px] font-heading font-semibold text-ink-primary hover:text-brand-teal transition-colors"
               >
                 <div className="flex items-center gap-2.5">
                   <Compass className="w-4 h-4 text-brand-teal" />
                   <span>Search Skill Catalog</span>
                 </div>
-                <ArrowRight className="w-3.5 h-3.5 text-ink-muted" />
+                <ArrowRight className="w-4 h-4 text-ink-muted group-hover:text-brand-teal group-hover:translate-x-0.5 transition-transform" strokeWidth={1.75} />
               </Link>
 
               <Link
                 to="/matches"
-                className="w-full flex items-center justify-between p-2.5 rounded-button bg-canvas-subtle hover:bg-canvas-border/50 text-xs font-heading font-semibold text-ink-primary transition-colors"
+                className="group w-full flex items-center justify-between py-3 text-[15px] font-heading font-semibold text-ink-primary hover:text-brand-teal transition-colors"
               >
                 <div className="flex items-center gap-2.5">
-                  <Sparkles className="w-4 h-4 text-brand-coral" />
+                  <Sparkles className="w-4 h-4 text-brand-teal" strokeWidth={1.75} />
                   <span>Review Compatibility Scores</span>
                 </div>
-                <ArrowRight className="w-3.5 h-3.5 text-ink-muted" />
+                <ArrowRight className="w-4 h-4 text-ink-muted group-hover:text-brand-teal group-hover:translate-x-0.5 transition-transform" strokeWidth={1.75} />
               </Link>
 
               <Link
                 to="/profile"
-                className="w-full flex items-center justify-between p-2.5 rounded-button bg-canvas-subtle hover:bg-canvas-border/50 text-xs font-heading font-semibold text-ink-primary transition-colors"
+                className="group w-full flex items-center justify-between py-3 text-[15px] font-heading font-semibold text-ink-primary hover:text-brand-teal transition-colors"
               >
                 <div className="flex items-center gap-2.5">
                   <Plus className="w-4 h-4 text-brand-teal" />
                   <span>Add Skills to Profile</span>
                 </div>
-                <ArrowRight className="w-3.5 h-3.5 text-ink-muted" />
+                <ArrowRight className="w-4 h-4 text-ink-muted group-hover:text-brand-teal group-hover:translate-x-0.5 transition-transform" strokeWidth={1.75} />
               </Link>
             </div>
           </div>
