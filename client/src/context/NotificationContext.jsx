@@ -19,12 +19,12 @@ export const NotificationProvider = ({ children }) => {
     <NotificationContext.Provider value={{ showNotification, hideNotification }}>
       {children}
       {toast && (
-        <div className="fixed bottom-5 right-5 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg border text-sm font-medium transition-all transform animate-bounce-short bg-white text-gray-800">
-          {toast.type === 'success' && <CheckCircle2 className="w-5 h-5 text-emerald-500" />}
-          {toast.type === 'error' && <AlertCircle className="w-5 h-5 text-rose-500" />}
-          {toast.type === 'info' && <Info className="w-5 h-5 text-indigo-500" />}
+        <div className="fixed bottom-20 md:bottom-6 right-4 md:right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-card shadow-elevated border-l-4 border-ink-primary text-[15px] font-medium animate-rise-in bg-canvas-card text-ink-primary">
+          {toast.type === 'success' && <CheckCircle2 className="w-5 h-5 text-status-success" strokeWidth={1.75} />}
+          {toast.type === 'error' && <AlertCircle className="w-5 h-5 text-status-danger" strokeWidth={1.75} />}
+          {toast.type === 'info' && <Info className="w-5 h-5 text-brand-teal" strokeWidth={1.75} />}
           <span className="max-w-xs">{toast.message}</span>
-          <button onClick={hideNotification} className="text-gray-400 hover:text-gray-600">
+          <button onClick={hideNotification} className="text-ink-muted hover:text-ink-primary" aria-label="Dismiss notification">
             <X className="w-4 h-4" />
           </button>
         </div>

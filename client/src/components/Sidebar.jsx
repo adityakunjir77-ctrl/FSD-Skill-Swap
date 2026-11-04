@@ -17,6 +17,20 @@ import {
   ArrowRightLeft,
 } from 'lucide-react';
 
+// Presentational: the exchange lifecycle as numbered chapters, and group labels for the table of contents
+const CHAPTERS = {
+  '/discover': 1,
+  '/matches': 2,
+  '/requests': 3,
+  '/messages': 4,
+  '/sessions': 5,
+};
+
+const GROUP_STARTS = {
+  '/discover': 'The exchange',
+  '/profile': 'You',
+};
+
 export default function Sidebar({
   isCollapsed = false,
   onToggleCollapse,
@@ -54,7 +68,7 @@ export default function Sidebar({
 
   return (
     <aside
-      className={`hidden md:flex flex-col bg-canvas-card border-r border-canvas-border transition-all duration-200 z-30 select-none ${
+      className={`hidden md:flex flex-col sticky top-0 h-screen bg-canvas border-r border-canvas-border transition-all duration-200 z-30 select-none ${
         isCollapsed ? 'w-18' : 'w-60'
       }`}
     >
@@ -63,8 +77,9 @@ export default function Sidebar({
         <NavLink
           to="/dashboard"
           className="flex items-center gap-2.5 overflow-hidden group focus:outline-none"
+          aria-label="SkillSwap dashboard"
         >
-          <div className="w-9 h-9 rounded-button bg-brand-teal flex items-center justify-center text-white shadow-soft flex-shrink-0 group-hover:bg-brand-teal-hover transition-colors">
+          <div className="w-9 h-9 rounded-button bg-brand-teal flex items-center justify-center text-white flex-shrink-0 group-hover:bg-brand-teal-dark transition-colors">
             {/* The Swap motif */}
             <svg
               width="18"
@@ -75,13 +90,14 @@ export default function Sidebar({
               strokeWidth="2.2"
               strokeLinecap="round"
               strokeLinejoin="round"
+              aria-hidden="true"
             >
               <path d="M4 8h13m0 0l-4-4m4 4l-4 4" />
               <path d="M20 16H7m0 0l4-4m-4 4l4 4" />
             </svg>
           </div>
           {!isCollapsed && (
-            <span className="font-heading font-bold text-lg tracking-tight text-ink-primary whitespace-nowrap">
+            <span className="font-display font-semibold text-[21px] leading-none tracking-[-0.02em] text-ink-primary whitespace-nowrap">
               Skill<span className="text-brand-teal">Swap</span>
             </span>
           )}
@@ -91,7 +107,7 @@ export default function Sidebar({
           <button
             type="button"
             onClick={onToggleCollapse}
-            className="p-1 rounded-lg text-ink-muted hover:text-ink-primary hover:bg-canvas-subtle transition-colors"
+            className="p-1 rounded-button text-ink-muted hover:text-ink-primary hover:bg-canvas-subtle transition-colors"
             title="Collapse sidebar"
             aria-label="Collapse sidebar"
           >
@@ -100,41 +116,55 @@ export default function Sidebar({
         )}
       </div>
 
-      {/* Navigation Links */}
-      <nav className="flex-1 py-4 px-2 space-y-1 overflow-y-auto">
+      {/* Navigation: a table of contents. The exchange lifecycle is numbered. */}
+      <nav className="flex-1 py-5 px-3 overflow-y-auto" aria-label="Main">
         {navItems.map((item) => {
           const Icon = item.icon;
+          const chapter = CHAPTERS[item.path];
+          const groupLabel = !isCollapsed && GROUP_STARTS[item.path];
           return (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              title={isCollapsed ? item.name : undefined}
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2.5 rounded-button font-heading text-sm font-medium transition-colors relative ${
-                  isActive
-                    ? 'bg-teach-bg text-teach-text border border-teach-border'
-                    : item.isAdmin
-                    ? 'text-brand-coral hover:bg-brand-coral-tint/60 border border-transparent'
-                    : 'text-ink-secondary hover:text-ink-primary hover:bg-canvas-subtle border border-transparent'
-                } ${isCollapsed ? 'justify-center px-0' : ''}`
-              }
-            >
-              <Icon className="w-4 h-4 flex-shrink-0" strokeWidth={1.75} />
-              {!isCollapsed && <span className="truncate">{item.name}</span>}
-
-              {/* Badge indicator */}
-              {item.badge && (
-                <span
-                  className={`${
-                    isCollapsed
-                      ? 'absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-brand-coral'
-                      : 'ml-auto px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-brand-coral text-white'
-                  }`}
-                >
-                  {!isCollapsed && item.badge}
-                </span>
+            <React.Fragment key={item.path}>
+              {groupLabel && (
+                <div className="px-3 pt-5 pb-2 text-xs font-heading font-semibold text-ink-muted">
+                  {groupLabel}
+                </div>
               )}
-            </NavLink>
+              <NavLink
+                to={item.path}
+                title={isCollapsed ? item.name : undefined}
+                className={({ isActive }) =>
+                  `flex items-baseline gap-3 px-3 py-2 font-heading text-[15px] transition-colors relative border-l-2 ${
+                    isActive
+                      ? 'border-brand-teal text-ink-primary font-semibold bg-canvas-card'
+                      : item.isAdmin
+                      ? 'border-transparent text-brand-teal-dark font-semibold hover:border-canvas-border-dark'
+                      : 'border-transparent text-ink-secondary font-medium hover:text-ink-primary hover:border-canvas-border-dark'
+                  } ${isCollapsed ? 'justify-center px-0 items-center' : ''}`
+                }
+              >
+                {isCollapsed ? (
+                  <Icon className="w-4 h-4 flex-shrink-0" strokeWidth={1.75} />
+                ) : chapter ? (
+                  <span className="chapter-num w-4 text-base leading-none flex-shrink-0">{chapter}</span>
+                ) : (
+                  <Icon className="w-4 h-4 flex-shrink-0 self-center text-ink-muted" strokeWidth={1.75} />
+                )}
+                {!isCollapsed && <span className="truncate">{item.name}</span>}
+
+                {/* Badge indicator */}
+                {item.badge && (
+                  <span
+                    className={`${
+                      isCollapsed
+                        ? 'absolute top-1.5 right-2 w-2 h-2 rounded-full bg-brand-teal'
+                        : 'ml-auto text-sm font-semibold text-brand-teal numerals'
+                    }`}
+                  >
+                    {!isCollapsed && item.badge}
+                  </span>
+                )}
+              </NavLink>
+            </React.Fragment>
           );
         })}
       </nav>
@@ -145,7 +175,7 @@ export default function Sidebar({
           <button
             type="button"
             onClick={onToggleCollapse}
-            className="p-2 rounded-lg text-ink-muted hover:text-ink-primary hover:bg-canvas-subtle transition-colors"
+            className="p-2 rounded-button text-ink-muted hover:text-ink-primary hover:bg-canvas-subtle transition-colors"
             title="Expand sidebar"
             aria-label="Expand sidebar"
           >
@@ -174,10 +204,10 @@ export default function Sidebar({
             />
             {!isCollapsed && (
               <div className="min-w-0 flex-1">
-                <div className="text-xs font-heading font-semibold text-ink-primary truncate">
+                <div className="text-sm font-heading font-semibold text-ink-primary truncate">
                   {user?.name || 'User'}
                 </div>
-                <div className="text-[11px] text-ink-muted truncate">
+                <div className="text-xs text-ink-muted truncate">
                   {user?.experienceLevel || 'Learner'}
                 </div>
               </div>
@@ -188,7 +218,7 @@ export default function Sidebar({
             <button
               type="button"
               onClick={handleLogout}
-              className="p-1.5 text-ink-muted hover:text-status-danger rounded-lg hover:bg-status-danger-bg/40 transition-colors focus:outline-none"
+              className="p-1.5 text-ink-muted hover:text-status-danger rounded-button hover:bg-status-danger-bg transition-colors focus:outline-none"
               title="Log out"
               aria-label="Log out"
             >
@@ -200,4 +230,3 @@ export default function Sidebar({
     </aside>
   );
 }
-

@@ -83,8 +83,8 @@ export default function ReviewModal({
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Interactive Star Picker */}
-        <div className="p-4 bg-canvas-subtle border border-canvas-border rounded-card flex flex-col items-center justify-center space-y-2">
-          <span className="text-xs font-heading font-semibold text-ink-muted uppercase tracking-wider">
+        <div className="py-5 border-y border-ink-primary flex flex-col items-center justify-center space-y-2">
+          <span className="text-sm font-heading font-semibold text-ink-secondary">
             Select Rating (1 to 5 Stars)
           </span>
 
@@ -95,7 +95,7 @@ export default function ReviewModal({
             onChange={(val) => setRating(val)}
           />
 
-          <span className="text-xs font-heading font-bold text-ink-primary">
+          <span className="font-display italic text-lg text-ink-primary">
             {rating === 5
               ? '5.0 - Exceptional Exchange!'
               : rating === 4
@@ -110,7 +110,7 @@ export default function ReviewModal({
 
         {/* Written Feedback */}
         <div>
-          <label className="block text-xs font-heading font-semibold text-ink-primary mb-1">
+          <label className="block text-sm font-heading font-semibold text-ink-primary mb-1.5">
             Written Feedback & Testimonial
           </label>
           <textarea
@@ -121,9 +121,9 @@ export default function ReviewModal({
             value={feedback}
             onChange={(e) => setFeedback(e.target.value)}
             placeholder={`Share what you learned from ${partner.name}, their teaching style, and communication...`}
-            className="w-full px-3 py-2 text-xs sm:text-sm bg-white border border-canvas-border rounded-input text-ink-primary focus-ring leading-relaxed resize-none"
+            className="w-full px-3 py-2 text-[15px] bg-canvas-card border border-canvas-border-dark rounded-input hover:border-ink-muted text-ink-primary focus-ring leading-relaxed resize-none"
           />
-          <div className="flex justify-between text-[11px] text-ink-muted mt-1">
+          <div className="flex justify-between text-xs text-ink-muted mt-1.5 numerals">
             <span>Minimum 5 characters</span>
             <span>{feedback.length}/1000</span>
           </div>
