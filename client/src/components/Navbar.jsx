@@ -3,7 +3,6 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import NotificationDropdown from './NotificationDropdown';
 import Avatar from './ui/Avatar';
-import Button from './ui/Button';
 import {
   Search,
   LogOut,
@@ -15,7 +14,7 @@ import {
   ArrowRightLeft,
 } from 'lucide-react';
 
-export default function Navbar({ onToggleSidebar }) {
+export default function Navbar({ onToggleSidebar, isDrawerOpen = false }) {
   const { user, isAuthenticated, isAdmin, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -40,12 +39,12 @@ export default function Navbar({ onToggleSidebar }) {
   // If user is NOT authenticated (Public Topbar)
   if (!isAuthenticated) {
     return (
-      <header className="bg-canvas-card border-b border-canvas-border sticky top-0 z-40 shadow-soft">
+      <header className="bg-canvas/95 backdrop-blur-sm border-b border-ink-primary sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
             {/* Brand Logo */}
             <Link to="/" className="flex items-center gap-2.5 group focus:outline-none">
-              <div className="w-9 h-9 rounded-button bg-brand-teal flex items-center justify-center text-white shadow-soft group-hover:bg-brand-teal-hover transition-colors">
+              <div className="w-9 h-9 rounded-button bg-brand-teal flex items-center justify-center text-white group-hover:bg-brand-teal-dark transition-colors">
                 <svg
                   width="18"
                   height="18"
@@ -60,16 +59,16 @@ export default function Navbar({ onToggleSidebar }) {
                   <path d="M20 16H7m0 0l4-4m-4 4l4 4" />
                 </svg>
               </div>
-              <span className="font-heading font-bold text-xl tracking-tight text-ink-primary">
+              <span className="font-display font-semibold text-[23px] leading-none tracking-[-0.02em] text-ink-primary">
                 Skill<span className="text-brand-teal">Swap</span>
               </span>
             </Link>
 
             {/* Public Links */}
-            <nav className="hidden sm:flex items-center gap-6">
+            <nav className="hidden sm:flex items-center gap-6" aria-label="Public">
               <Link
                 to="/discover"
-                className="text-sm font-heading font-medium text-ink-secondary hover:text-brand-teal transition-colors"
+                className="text-[15px] font-heading font-semibold text-ink-secondary hover:text-ink-primary underline-offset-[6px] hover:underline decoration-brand-teal decoration-2 transition-colors"
               >
                 Browse Skills
               </Link>
@@ -79,14 +78,15 @@ export default function Navbar({ onToggleSidebar }) {
             <div className="flex items-center gap-3">
               <Link
                 to="/login"
-                className="text-sm font-heading font-medium text-ink-secondary hover:text-ink-primary px-3 py-2 rounded-button hover:bg-canvas-subtle transition-colors"
+                className="text-[15px] font-heading font-semibold text-ink-secondary hover:text-ink-primary px-3 py-2 rounded-button transition-colors"
               >
                 Sign In
               </Link>
-              <Link to="/register">
-                <Button variant="coral" size="sm">
-                  Get Started Free
-                </Button>
+              <Link
+                to="/register"
+                className="inline-flex items-center justify-center h-9 px-4 rounded-button bg-ink-primary border border-ink-primary text-white text-sm font-heading font-semibold hover:bg-brand-teal-dark hover:border-brand-teal-dark transition-colors"
+              >
+                Get Started Free
               </Link>
             </div>
           </div>
@@ -97,7 +97,7 @@ export default function Navbar({ onToggleSidebar }) {
 
   // Authenticated Top Bar
   return (
-    <header className="bg-canvas-card border-b border-canvas-border sticky top-0 z-30 h-16 flex items-center px-4 sm:px-6 justify-between">
+    <header className="bg-canvas/95 backdrop-blur-sm border-b border-canvas-border sticky top-0 z-30 h-16 flex items-center px-4 sm:px-6 lg:px-8 justify-between">
       {/* Left: Mobile sidebar toggle & Global Search */}
       <div className="flex items-center gap-3 flex-1 max-w-md">
         {onToggleSidebar && (
@@ -106,6 +106,8 @@ export default function Navbar({ onToggleSidebar }) {
             onClick={onToggleSidebar}
             className="md:hidden p-2 rounded-button text-ink-secondary hover:bg-canvas-subtle focus:outline-none"
             aria-label="Toggle Navigation"
+            aria-expanded={isDrawerOpen}
+            aria-controls="mobile-navigation"
           >
             <Menu className="w-5 h-5" />
           </button>
@@ -119,7 +121,7 @@ export default function Navbar({ onToggleSidebar }) {
             placeholder="Search skills, users, topics..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 text-xs sm:text-sm bg-canvas-subtle/70 border border-canvas-border rounded-button text-ink-primary placeholder-ink-muted focus-ring transition-colors"
+            className="w-full pl-9 pr-4 py-2 text-sm bg-canvas-card border border-canvas-border rounded-input text-ink-primary placeholder-ink-muted focus-ring hover:border-canvas-border-dark transition-colors"
           />
         </form>
       </div>
@@ -134,7 +136,7 @@ export default function Navbar({ onToggleSidebar }) {
           <button
             type="button"
             onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-            className="flex items-center gap-2.5 p-1 rounded-full hover:bg-canvas-subtle transition-colors focus:outline-none focus:ring-2 focus:ring-brand-teal/20"
+            className="flex items-center gap-2.5 p-1 rounded-button hover:bg-canvas-subtle transition-colors focus:outline-none"
             aria-label="User menu"
           >
             <Avatar
@@ -143,7 +145,7 @@ export default function Navbar({ onToggleSidebar }) {
               id={user?._id}
               size="sm"
             />
-            <span className="hidden lg:block text-xs font-heading font-semibold text-ink-primary max-w-[120px] truncate">
+            <span className="hidden lg:block text-sm font-heading font-semibold text-ink-primary max-w-[140px] truncate">
               {user?.name || 'My Account'}
             </span>
           </button>
@@ -151,21 +153,21 @@ export default function Navbar({ onToggleSidebar }) {
           {/* User Menu Dropdown */}
           {userDropdownOpen && (
             <div
-              className="absolute right-0 mt-2 w-56 bg-canvas-card rounded-card shadow-elevated border border-canvas-border z-50 overflow-hidden py-1.5 animate-in fade-in zoom-in-95 duration-150"
+              className="absolute right-0 mt-2 w-60 bg-canvas-card rounded-card shadow-elevated border border-ink-primary z-50 overflow-hidden py-1.5 animate-fade-in"
               onClick={() => setUserDropdownOpen(false)}
             >
-              <div className="px-4 py-2.5 border-b border-canvas-border bg-canvas-subtle/50">
-                <div className="font-heading font-bold text-xs text-ink-primary truncate">
+              <div className="px-4 pt-2 pb-3 border-b border-canvas-border">
+                <div className="font-display font-medium text-lg text-ink-primary truncate">
                   {user?.name}
                 </div>
-                <div className="text-[11px] text-ink-muted truncate">
+                <div className="text-xs text-ink-muted truncate">
                   {user?.email}
                 </div>
               </div>
 
               <Link
                 to="/profile"
-                className="flex items-center gap-2.5 px-4 py-2 text-xs font-heading font-medium text-ink-primary hover:bg-canvas-subtle transition-colors"
+                className="flex items-center gap-2.5 px-4 py-2 text-sm font-heading font-medium text-ink-primary hover:bg-canvas-subtle transition-colors"
               >
                 <User className="w-4 h-4 text-ink-secondary" />
                 <span>My Profile & Skills</span>
@@ -173,7 +175,7 @@ export default function Navbar({ onToggleSidebar }) {
 
               <Link
                 to="/discover"
-                className="flex items-center gap-2.5 px-4 py-2 text-xs font-heading font-medium text-ink-primary hover:bg-canvas-subtle transition-colors"
+                className="flex items-center gap-2.5 px-4 py-2 text-sm font-heading font-medium text-ink-primary hover:bg-canvas-subtle transition-colors"
               >
                 <Compass className="w-4 h-4 text-ink-secondary" />
                 <span>Explore Directory</span>
@@ -182,7 +184,7 @@ export default function Navbar({ onToggleSidebar }) {
               {isAdmin && (
                 <Link
                   to="/admin"
-                  className="flex items-center gap-2.5 px-4 py-2 text-xs font-heading font-medium text-brand-coral hover:bg-brand-coral-tint/60 transition-colors"
+                  className="flex items-center gap-2.5 px-4 py-2 text-sm font-heading font-semibold text-brand-teal-dark hover:bg-brand-teal-surface transition-colors"
                 >
                   <ShieldAlert className="w-4 h-4" />
                   <span>Administrative Portal</span>
@@ -194,7 +196,7 @@ export default function Navbar({ onToggleSidebar }) {
               <button
                 type="button"
                 onClick={handleLogout}
-                className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-heading font-medium text-status-danger hover:bg-status-danger-bg/40 transition-colors text-left"
+                className="w-full flex items-center gap-2.5 px-4 py-2 text-sm font-heading font-medium text-status-danger hover:bg-status-danger-bg transition-colors text-left"
               >
                 <LogOut className="w-4 h-4" />
                 <span>Sign Out</span>

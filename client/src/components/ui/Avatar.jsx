@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 
 // Deterministic soft color palette for initials avatar
 const AVATAR_PALETTES = [
-  { bg: 'bg-[#E6F6F3]', text: 'text-[#0F766E]', border: 'border-[#BCECE3]' },
-  { bg: 'bg-[#FFF1DB]', text: 'text-[#9A5B00]', border: 'border-[#FCE2B6]' },
-  { bg: 'bg-[#E0F2FE]', text: 'text-[#0369A1]', border: 'border-[#BAE6FD]' },
-  { bg: 'bg-[#FEECE8]', text: 'text-[#F2674A]', border: 'border-[#FED7CE]' },
-  { bg: 'bg-[#F3E8FF]', text: 'text-[#7E22CE]', border: 'border-[#E9D5FF]' },
-  { bg: 'bg-[#DCFCE7]', text: 'text-[#15803D]', border: 'border-[#BBF7D0]' },
+  { bg: 'bg-[#E3EEEB]', text: 'text-[#0A4F4A]', border: 'border-[#B9D3CD]' },
+  { bg: 'bg-[#F2EBDD]', text: 'text-[#6B4300]', border: 'border-[#DCCBA8]' },
+  { bg: 'bg-[#E6E9EC]', text: 'text-[#2F3B47]', border: 'border-[#C5CCD3]' },
+  { bg: 'bg-[#EFE6E3]', text: 'text-[#6E3527]', border: 'border-[#D8C3BC]' },
+  { bg: 'bg-[#E9E7EF]', text: 'text-[#43395E]', border: 'border-[#CAC5D8]' },
+  { bg: 'bg-[#E5ECE4]', text: 'text-[#2E5130]', border: 'border-[#C0D0BE]' },
 ];
 
 function getPalette(seed = '') {
@@ -41,11 +41,11 @@ export default function Avatar({
   const sizeStyles = {
     xs: 'w-6 h-6 text-[10px]',
     sm: 'w-8 h-8 text-xs',
-    md: 'w-10 h-10 text-sm font-semibold',
-    lg: 'w-12 h-12 text-base font-semibold',
-    xl: 'w-16 h-16 text-lg font-bold',
-    '2xl': 'w-24 h-24 text-2xl font-bold',
-  }[size] || 'w-10 h-10 text-sm font-semibold';
+    md: 'w-10 h-10 text-base',
+    lg: 'w-12 h-12 text-lg',
+    xl: 'w-16 h-16 text-2xl',
+    '2xl': 'w-24 h-24 text-4xl',
+  }[size] || 'w-10 h-10 text-base';
 
   const indicatorSize = {
     xs: 'w-1.5 h-1.5',
@@ -65,11 +65,11 @@ export default function Avatar({
           src={src}
           alt={name || 'Avatar'}
           onError={() => setImageError(true)}
-          className={`${sizeStyles} rounded-full object-cover border border-canvas-border`}
+          className={`${sizeStyles} rounded-card object-cover object-top border border-ink-primary/15`}
         />
       ) : (
         <div
-          className={`${sizeStyles} rounded-full flex items-center justify-center font-heading ${palette.bg} ${palette.text} border ${palette.border} select-none`}
+          className={`${sizeStyles} rounded-card flex items-center justify-center font-display font-medium tracking-tight ${palette.bg} ${palette.text} border ${palette.border} select-none`}
           aria-label={name || 'User avatar'}
         >
           {getInitials(name)}
@@ -78,7 +78,7 @@ export default function Avatar({
 
       {showOnline && (
         <span
-          className={`absolute bottom-0 right-0 ${indicatorSize} rounded-full ring-2 ring-white ${
+          className={`absolute -bottom-0.5 -right-0.5 ${indicatorSize} rounded-full ring-2 ring-white ${
             isOnline ? 'bg-status-success' : 'bg-ink-muted'
           }`}
           title={isOnline ? 'Online' : 'Offline'}

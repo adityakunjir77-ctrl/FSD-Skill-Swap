@@ -199,205 +199,198 @@ export default function ProfilePage() {
   const wants = profileUser.skillsWanted || [];
 
   return (
-    <div className="space-y-6">
-      {/* 1. HEADER CARD (No cover photo, subtle brand pattern strip instead) */}
-      <div className="bg-canvas-card border border-canvas-border rounded-card shadow-soft overflow-hidden">
-        {/* Subtle Brand Pattern Strip */}
-        <div
-          className="h-16 w-full border-b border-canvas-border relative overflow-hidden"
-          style={{
-            backgroundColor: '#F0FDFA',
-            backgroundImage: `radial-gradient(#0F766E 0.75px, transparent 0.75px)`,
-            backgroundSize: '12px 12px',
-          }}
-        />
-
-        <div className="p-6 sm:p-8 pt-0 relative">
-          <div className="flex flex-col sm:flex-row items-center sm:items-end justify-between gap-4 -mt-10 mb-5">
-            {/* Large Avatar */}
-            <div className="ring-4 ring-white rounded-full bg-white shadow-soft">
+    <div className="space-y-12">
+      {/* 1. PROFILE MASTHEAD */}
+      <header className="border-b border-ink-primary pb-8">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8 items-end">
+          {/* Portrait */}
+          <div className="md:col-span-3">
+            <div className="inline-block p-1.5 border border-ink-primary bg-canvas-card">
               <Avatar
                 src={profileUser.avatar}
                 name={profileUser.name}
                 id={profileUser._id}
                 size="2xl"
+                className="[&>*]:w-28 [&>*]:h-28 sm:[&>*]:w-36 sm:[&>*]:h-36 [&>*]:text-5xl"
               />
-            </div>
-
-            {/* Profile Action: Edit Profile (Own) or Propose Swap (Public) */}
-            <div className="self-center sm:self-auto">
-              {!isPublicProfile ? (
-                <Button
-                  variant="secondary"
-                  size="md"
-                  icon={Edit3}
-                  onClick={() => {
-                    populateEditForm(profileUser);
-                    setIsEditModalOpen(true);
-                  }}
-                >
-                  Edit Profile
-                </Button>
-              ) : (
-                <Button
-                  variant="coral"
-                  size="md"
-                  icon={Send}
-                  onClick={() => setIsProposeModalOpen(true)}
-                >
-                  Propose Skill Swap
-                </Button>
-              )}
             </div>
           </div>
 
-          {/* User Bio and Meta Info */}
-          <div className="space-y-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="font-heading font-bold text-2xl sm:text-3xl text-ink-primary">
-                {profileUser.name}
-              </h1>
-              {profileUser.role === 'admin' && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-heading font-semibold bg-brand-coral-tint text-brand-coral border border-[#FED7CE]">
-                  <Shield className="w-3 h-3" /> Admin
-                </span>
-              )}
+          {/* Name, standfirst and action */}
+          <div className="md:col-span-9 space-y-4">
+            <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+              <div className="flex flex-wrap items-baseline gap-x-3 gap-y-2">
+                <h1 className="font-display font-medium text-display-md sm:text-display-lg tracking-[-0.025em] text-ink-primary">
+                  {profileUser.name}
+                </h1>
+                {profileUser.role === 'admin' && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-button text-xs font-heading font-semibold border border-ink-primary text-ink-primary">
+                    <Shield className="w-3 h-3" strokeWidth={1.75} /> Admin
+                  </span>
+                )}
+              </div>
+
+              {/* Profile Action: Edit Profile (Own) or Propose Swap (Public) */}
+              <div className="self-start lg:self-auto flex-shrink-0">
+                {!isPublicProfile ? (
+                  <Button
+                    variant="secondary"
+                    size="md"
+                    icon={Edit3}
+                    onClick={() => {
+                      populateEditForm(profileUser);
+                      setIsEditModalOpen(true);
+                    }}
+                  >
+                    Edit Profile
+                  </Button>
+                ) : (
+                  <Button
+                    variant="coral"
+                    size="md"
+                    icon={Send}
+                    onClick={() => setIsProposeModalOpen(true)}
+                  >
+                    Propose Skill Swap
+                  </Button>
+                )}
+              </div>
             </div>
 
             {profileUser.bio && (
-              <p className="text-sm text-ink-secondary max-w-3xl leading-relaxed">
+              <p className="font-display text-title sm:text-[1.5rem] leading-snug text-ink-secondary max-w-3xl">
                 {profileUser.bio}
               </p>
             )}
-
-            {/* Badges / Metrics Strip */}
-            <div className="flex flex-wrap items-center gap-4 text-xs text-ink-secondary pt-2 border-t border-canvas-border">
-              {profileUser.location && (
-                <span className="flex items-center gap-1">
-                  <MapPin className="w-3.5 h-3.5 text-brand-teal" />
-                  {profileUser.location}
-                </span>
-              )}
-              <span className="flex items-center gap-1">
-                <Briefcase className="w-3.5 h-3.5 text-brand-teal" />
-                {profileUser.experienceLevel || 'Intermediate'}
-              </span>
-              <span className="flex items-center gap-1">
-                <Clock className="w-3.5 h-3.5 text-brand-teal" />
-                {profileUser.availability || 'Weekends & Evenings'}
-              </span>
-              <span className="flex items-center gap-1">
-                <CheckCircle className="w-3.5 h-3.5 text-status-success" />
-                {profileUser.completedExchanges || 0} completed swaps
-              </span>
-              <RatingStars
-                rating={profileUser.averageRating || 5.0}
-                count={reviews.length}
-                size="sm"
-                showScore
-              />
-            </div>
           </div>
         </div>
-      </div>
 
-      {/* 2. TWO PROMINENT COLUMNS: "I Can Teach" and "I Want to Learn" */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Metrics row */}
+        <div className="mt-8 pt-4 border-t border-canvas-border flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-ink-secondary">
+          {profileUser.location && (
+            <span className="flex items-center gap-1.5">
+              <MapPin className="w-4 h-4 text-brand-teal" strokeWidth={1.75} />
+              {profileUser.location}
+            </span>
+          )}
+          <span className="flex items-center gap-1.5">
+            <Briefcase className="w-4 h-4 text-brand-teal" strokeWidth={1.75} />
+            {profileUser.experienceLevel || 'Intermediate'}
+          </span>
+          <span className="flex items-center gap-1.5">
+            <Clock className="w-4 h-4 text-brand-teal" strokeWidth={1.75} />
+            {profileUser.availability || 'Weekends & Evenings'}
+          </span>
+          <span className="flex items-center gap-1.5 numerals">
+            <CheckCircle className="w-4 h-4 text-status-success" strokeWidth={1.75} />
+            {profileUser.completedExchanges || 0} completed swaps
+          </span>
+          <RatingStars
+            rating={profileUser.averageRating || 5.0}
+            count={reviews.length}
+            size="sm"
+            showScore
+          />
+        </div>
+      </header>
+
+      {/* 2. THE LEDGER: "I Can Teach" | "I Want to Learn" */}
+      <div className="grid grid-cols-1 md:grid-cols-2 border-t-2 border-ink-primary">
         {/* Left Column: I Can Teach */}
-        <div className="bg-canvas-card border border-teach-border/80 rounded-card p-6 shadow-soft space-y-3">
-          <div className="flex items-center justify-between pb-3 border-b border-canvas-border">
-            <h2 className="font-heading font-bold text-base text-teach-text flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-teach-text" />
-              Skills Offered to Teach ({offers.length})
+        <section className="py-5 md:pr-8 md:border-r border-canvas-border space-y-4">
+          <div className="flex items-baseline justify-between gap-3">
+            <h2 className="font-display font-medium text-title text-teach-text">
+              Skills Offered to Teach <span className="text-ink-muted numerals">({offers.length})</span>
             </h2>
             {!isPublicProfile && (
               <button
                 type="button"
                 onClick={() => setIsEditModalOpen(true)}
-                className="text-xs font-heading font-semibold text-brand-teal hover:underline"
+                className="text-sm font-heading font-semibold text-brand-teal hover:underline underline-offset-4"
               >
                 Manage
               </button>
             )}
           </div>
 
-          <div className="flex flex-wrap gap-2 pt-1">
+          <div className="flex flex-wrap gap-2">
             {offers.length === 0 ? (
-              <span className="text-xs text-ink-muted italic">
+              <span className="text-sm text-ink-muted italic">
                 No skills listed yet.
               </span>
             ) : (
               offers.map((sk, idx) => (
-                <Pill key={idx} variant="teach" size="md">
+                <Pill key={idx} variant="teach" size="lg">
                   {typeof sk === 'object' ? sk.name : sk}
                 </Pill>
               ))
             )}
           </div>
-        </div>
+        </section>
 
         {/* Right Column: I Want to Learn */}
-        <div className="bg-canvas-card border border-learn-border/80 rounded-card p-6 shadow-soft space-y-3">
-          <div className="flex items-center justify-between pb-3 border-b border-canvas-border">
-            <h2 className="font-heading font-bold text-base text-learn-text flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-learn-text" />
-              Skills Desired to Learn ({wants.length})
+        <section className="py-5 md:pl-8 border-t md:border-t-0 border-canvas-border space-y-4">
+          <div className="flex items-baseline justify-between gap-3">
+            <h2 className="font-display font-medium text-title text-learn-text">
+              Skills Desired to Learn <span className="text-ink-muted numerals">({wants.length})</span>
             </h2>
             {!isPublicProfile && (
               <button
                 type="button"
                 onClick={() => setIsEditModalOpen(true)}
-                className="text-xs font-heading font-semibold text-brand-teal hover:underline"
+                className="text-sm font-heading font-semibold text-brand-teal hover:underline underline-offset-4"
               >
                 Manage
               </button>
             )}
           </div>
 
-          <div className="flex flex-wrap gap-2 pt-1">
+          <div className="flex flex-wrap gap-2">
             {wants.length === 0 ? (
-              <span className="text-xs text-ink-muted italic">
+              <span className="text-sm text-ink-muted italic">
                 No skills desired listed yet.
               </span>
             ) : (
               wants.map((sk, idx) => (
-                <Pill key={idx} variant="learn" size="md">
+                <Pill key={idx} variant="learn" size="lg">
                   {typeof sk === 'object' ? sk.name : sk}
                 </Pill>
               ))
             )}
           </div>
-        </div>
+        </section>
       </div>
 
       {/* 3. REVIEWS & TESTIMONIALS SECTION */}
-      <div className="bg-canvas-card border border-canvas-border rounded-card p-6 shadow-soft space-y-4">
-        <div className="flex items-center justify-between pb-3 border-b border-canvas-border">
-          <div>
-            <h2 className="font-heading font-bold text-base text-ink-primary flex items-center gap-2">
-              <Star className="w-4 h-4 text-[#F59E0B]" />
-              Verified Reviews & Trust Testimonials ({reviews.length})
-            </h2>
-            <p className="text-xs text-ink-secondary mt-0.5">
-              Feedback submitted by peers following completed skill exchange sessions.
-            </p>
-          </div>
+      <section className="section-open space-y-6">
+        <div>
+          <h2 className="font-display font-medium text-display-sm text-ink-primary tracking-[-0.015em]">
+            Verified Reviews & Trust Testimonials <span className="text-ink-muted numerals">({reviews.length})</span>
+          </h2>
+          <p className="text-sm text-ink-secondary mt-1">
+            Feedback submitted by peers following completed skill exchange sessions.
+          </p>
         </div>
 
         {loadingReviews ? (
           <Skeleton variant="text" count={3} />
         ) : reviews.length === 0 ? (
-          <div className="py-8 text-center text-xs text-ink-muted">
+          <div className="py-8 border-t border-canvas-border text-sm text-ink-muted">
             No peer reviews recorded yet. Reviews are unlocked once an exchange is marked completed.
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-8">
             {reviews.map((rev) => (
-              <div
+              <figure
                 key={rev._id}
-                className="p-4 bg-canvas-subtle/70 border border-canvas-border rounded-card space-y-2.5 text-xs"
+                className="pt-4 border-t border-canvas-border space-y-3"
               >
-                <div className="flex items-center justify-between">
+                <blockquote className="flex items-start gap-2 font-display italic text-title leading-snug text-ink-primary">
+                  <Quote className="w-4 h-4 text-brand-teal flex-shrink-0 mt-1.5 not-italic" strokeWidth={1.75} aria-hidden="true" />
+                  <span>"{rev.feedback}"</span>
+                </blockquote>
+
+                <figcaption className="flex flex-wrap items-center justify-between gap-2 text-sm">
                   <div className="flex items-center gap-2.5">
                     <Avatar
                       src={rev.reviewer?.avatar}
@@ -408,27 +401,21 @@ export default function ProfilePage() {
                     <span className="font-heading font-semibold text-ink-primary">
                       {rev.reviewer?.name}
                     </span>
+                    <span className="text-ink-muted numerals">
+                      {new Date(rev.createdAt).toLocaleDateString([], {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })}
+                    </span>
                   </div>
                   <RatingStars rating={rev.rating} size="xs" />
-                </div>
-
-                <div className="flex items-start gap-1.5 text-ink-secondary italic pt-1">
-                  <Quote className="w-3.5 h-3.5 text-brand-teal flex-shrink-0 mt-0.5 not-italic" />
-                  <span>"{rev.feedback}"</span>
-                </div>
-
-                <div className="text-[10px] text-ink-muted pt-1 border-t border-canvas-border/50">
-                  {new Date(rev.createdAt).toLocaleDateString([], {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric',
-                  })}
-                </div>
-              </div>
+                </figcaption>
+              </figure>
             ))}
           </div>
         )}
-      </div>
+      </section>
 
       {/* EDIT PROFILE MODAL (When viewing own profile) */}
       {!isPublicProfile && (
@@ -461,7 +448,7 @@ export default function ProfilePage() {
         >
           <form onSubmit={handleSaveProfile} className="space-y-4">
             <div>
-              <label className="block text-xs font-heading font-semibold text-ink-primary mb-1">
+              <label className="block text-sm font-heading font-semibold text-ink-primary mb-1.5">
                 Full Name
               </label>
               <input
@@ -470,12 +457,12 @@ export default function ProfilePage() {
                 required
                 value={editFormData.name}
                 onChange={handleEditInputChange}
-                className="w-full px-3 py-2 text-xs sm:text-sm bg-white border border-canvas-border rounded-input text-ink-primary focus-ring"
+                className="w-full px-3 py-2 text-[15px] bg-canvas-card border border-canvas-border-dark rounded-input hover:border-ink-muted text-ink-primary focus-ring"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-heading font-semibold text-ink-primary mb-1">
+              <label className="block text-sm font-heading font-semibold text-ink-primary mb-1.5">
                 Bio & Background
               </label>
               <textarea
@@ -484,13 +471,13 @@ export default function ProfilePage() {
                 value={editFormData.bio}
                 onChange={handleEditInputChange}
                 placeholder="Share your experience and what you're passionate about..."
-                className="w-full px-3 py-2 text-xs sm:text-sm bg-white border border-canvas-border rounded-input text-ink-primary focus-ring resize-none leading-relaxed"
+                className="w-full px-3 py-2 text-[15px] bg-canvas-card border border-canvas-border-dark rounded-input hover:border-ink-muted text-ink-primary focus-ring resize-none leading-relaxed"
               />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-heading font-semibold text-ink-primary mb-1">
+                <label className="block text-sm font-heading font-semibold text-ink-primary mb-1.5">
                   Location
                 </label>
                 <input
@@ -499,19 +486,19 @@ export default function ProfilePage() {
                   value={editFormData.location}
                   onChange={handleEditInputChange}
                   placeholder="e.g. Remote, San Francisco"
-                  className="w-full px-3 py-2 text-xs sm:text-sm bg-white border border-canvas-border rounded-input text-ink-primary focus-ring"
+                  className="w-full px-3 py-2 text-[15px] bg-canvas-card border border-canvas-border-dark rounded-input hover:border-ink-muted text-ink-primary focus-ring"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-heading font-semibold text-ink-primary mb-1">
+                <label className="block text-sm font-heading font-semibold text-ink-primary mb-1.5">
                   Experience Level
                 </label>
                 <select
                   name="experienceLevel"
                   value={editFormData.experienceLevel}
                   onChange={handleEditInputChange}
-                  className="w-full px-3 py-2 text-xs sm:text-sm bg-white border border-canvas-border rounded-input text-ink-primary focus-ring"
+                  className="w-full px-3 py-2 text-[15px] bg-canvas-card border border-canvas-border-dark rounded-input hover:border-ink-muted text-ink-primary focus-ring"
                 >
                   <option value="Beginner">Beginner</option>
                   <option value="Intermediate">Intermediate</option>
@@ -522,7 +509,7 @@ export default function ProfilePage() {
             </div>
 
             <div>
-              <label className="block text-xs font-heading font-semibold text-ink-primary mb-1">
+              <label className="block text-sm font-heading font-semibold text-ink-primary mb-1.5">
                 Availability Notes
               </label>
               <input
@@ -531,13 +518,13 @@ export default function ProfilePage() {
                 value={editFormData.availability}
                 onChange={handleEditInputChange}
                 placeholder="e.g. Weekends & Evenings"
-                className="w-full px-3 py-2 text-xs sm:text-sm bg-white border border-canvas-border rounded-input text-ink-primary focus-ring"
+                className="w-full px-3 py-2 text-[15px] bg-canvas-card border border-canvas-border-dark rounded-input hover:border-ink-muted text-ink-primary focus-ring"
               />
             </div>
 
             {/* Manage Offered Skills */}
-            <div className="pt-2 border-t border-canvas-border">
-              <label className="block text-xs font-heading font-semibold text-teach-text uppercase tracking-wider mb-1.5">
+            <div className="pt-4 border-t border-canvas-border">
+              <label className="block text-sm font-heading font-semibold text-teach-text mb-1.5">
                 Manage Skills You Teach
               </label>
               <div className="flex flex-wrap gap-1.5 mb-2">
@@ -564,7 +551,7 @@ export default function ProfilePage() {
                       handleAddOfferedSkill();
                     }
                   }}
-                  className="flex-1 px-3 py-1.5 text-xs bg-white border border-canvas-border rounded-input text-ink-primary focus-ring"
+                  className="flex-1 min-w-0 px-3 py-2 text-sm bg-canvas-card border border-canvas-border-dark rounded-input hover:border-ink-muted text-ink-primary focus-ring"
                 />
                 <Button
                   type="button"
@@ -578,8 +565,8 @@ export default function ProfilePage() {
             </div>
 
             {/* Manage Wanted Skills */}
-            <div className="pt-2 border-t border-canvas-border">
-              <label className="block text-xs font-heading font-semibold text-learn-text uppercase tracking-wider mb-1.5">
+            <div className="pt-4 border-t border-canvas-border">
+              <label className="block text-sm font-heading font-semibold text-learn-text mb-1.5">
                 Manage Skills You Want to Learn
               </label>
               <div className="flex flex-wrap gap-1.5 mb-2">
@@ -606,7 +593,7 @@ export default function ProfilePage() {
                       handleAddWantedSkill();
                     }
                   }}
-                  className="flex-1 px-3 py-1.5 text-xs bg-white border border-canvas-border rounded-input text-ink-primary focus-ring"
+                  className="flex-1 min-w-0 px-3 py-2 text-sm bg-canvas-card border border-canvas-border-dark rounded-input hover:border-ink-muted text-ink-primary focus-ring"
                 />
                 <Button
                   type="button"

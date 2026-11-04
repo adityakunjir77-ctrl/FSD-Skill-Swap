@@ -169,13 +169,13 @@ export default function RegisterPage() {
   return (
     <div>
       {/* 3-Step Breadcrumb Progress Indicator */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between text-xs font-heading font-semibold text-ink-muted mb-2">
-          <span className={step >= 1 ? 'text-brand-teal' : ''}>1. Account</span>
-          <span className={step >= 2 ? 'text-brand-teal' : ''}>2. What I Teach</span>
-          <span className={step >= 3 ? 'text-brand-teal' : ''}>3. What I Learn</span>
+      <div className="mb-8">
+        <div className="flex items-center justify-between gap-2 text-sm font-heading font-semibold text-ink-muted mb-2.5">
+          <span className={step >= 1 ? 'text-ink-primary' : ''}>1. Account</span>
+          <span className={step >= 2 ? 'text-ink-primary' : ''}>2. What I Teach</span>
+          <span className={step >= 3 ? 'text-ink-primary' : ''}>3. What I Learn</span>
         </div>
-        <div className="h-1.5 w-full bg-canvas-border rounded-full overflow-hidden">
+        <div className="h-0.5 w-full bg-canvas-border overflow-hidden">
           <div
             className="h-full bg-brand-teal transition-all duration-300"
             style={{ width: `${(step / 3) * 100}%` }}
@@ -184,7 +184,7 @@ export default function RegisterPage() {
       </div>
 
       {errorMsg && (
-        <div className="mb-4 p-3 bg-status-danger-bg/40 border border-[#FECACA] rounded-button text-xs text-status-danger font-medium">
+        <div className="mb-5 py-2.5 px-3 bg-status-danger-bg border-l-2 border-status-danger rounded-button text-sm text-status-danger font-medium" role="alert">
           {errorMsg}
         </div>
       )}
@@ -192,18 +192,18 @@ export default function RegisterPage() {
       {/* STEP 1: Account Credentials */}
       {step === 1 && (
         <div>
-          <div className="mb-5">
-            <h2 className="font-heading font-bold text-2xl text-ink-primary">
+          <div className="mb-6">
+            <h1 className="font-display font-medium text-display-md tracking-[-0.025em] text-ink-primary">
               Create Your Account
-            </h2>
-            <p className="text-xs text-ink-secondary mt-1">
+            </h1>
+            <p className="text-base text-ink-secondary mt-2">
               Join the reciprocal peer learning community
             </p>
           </div>
 
           <form onSubmit={handleStep1Next} className="space-y-3.5">
             <div>
-              <label className="block text-xs font-heading font-semibold text-ink-primary mb-1">
+              <label className="block text-sm font-heading font-semibold text-ink-primary mb-1.5">
                 Full Name
               </label>
               <div className="relative">
@@ -215,13 +215,13 @@ export default function RegisterPage() {
                   value={formData.name}
                   onChange={handleChange}
                   placeholder="e.g. Alex Morgan"
-                  className="w-full pl-9 pr-3.5 py-2.5 bg-white border border-canvas-border rounded-input text-xs sm:text-sm text-ink-primary placeholder-ink-muted focus-ring transition-colors"
+                  className="w-full pl-9 pr-3.5 py-3 bg-canvas-card border border-canvas-border-dark rounded-input hover:border-ink-muted text-[15px] text-ink-primary placeholder-ink-muted focus-ring transition-colors"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-heading font-semibold text-ink-primary mb-1">
+              <label className="block text-sm font-heading font-semibold text-ink-primary mb-1.5">
                 Email Address
               </label>
               <div className="relative">
@@ -233,14 +233,14 @@ export default function RegisterPage() {
                   value={formData.email}
                   onChange={handleChange}
                   placeholder="alex@example.com"
-                  className="w-full pl-9 pr-3.5 py-2.5 bg-white border border-canvas-border rounded-input text-xs sm:text-sm text-ink-primary placeholder-ink-muted focus-ring transition-colors"
+                  className="w-full pl-9 pr-3.5 py-3 bg-canvas-card border border-canvas-border-dark rounded-input hover:border-ink-muted text-[15px] text-ink-primary placeholder-ink-muted focus-ring transition-colors"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-heading font-semibold text-ink-primary mb-1">
+                <label className="block text-sm font-heading font-semibold text-ink-primary mb-1.5">
                   Password
                 </label>
                 <div className="relative">
@@ -253,7 +253,7 @@ export default function RegisterPage() {
                     value={formData.password}
                     onChange={handleChange}
                     placeholder="Min 6 chars"
-                    className="w-full pl-9 pr-8 py-2.5 bg-white border border-canvas-border rounded-input text-xs sm:text-sm text-ink-primary placeholder-ink-muted focus-ring transition-colors"
+                    className="w-full pl-9 pr-8 py-3 bg-canvas-card border border-canvas-border-dark rounded-input hover:border-ink-muted text-[15px] text-ink-primary placeholder-ink-muted focus-ring transition-colors"
                   />
                   <button
                     type="button"
@@ -267,7 +267,7 @@ export default function RegisterPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-heading font-semibold text-ink-primary mb-1">
+                <label className="block text-sm font-heading font-semibold text-ink-primary mb-1.5">
                   Confirm Password
                 </label>
                 <div className="relative">
@@ -279,7 +279,7 @@ export default function RegisterPage() {
                     value={formData.confirmPassword}
                     onChange={handleChange}
                     placeholder="Repeat password"
-                    className="w-full pl-9 pr-3.5 py-2.5 bg-white border border-canvas-border rounded-input text-xs sm:text-sm text-ink-primary placeholder-ink-muted focus-ring transition-colors"
+                    className="w-full pl-9 pr-3.5 py-3 bg-canvas-card border border-canvas-border-dark rounded-input hover:border-ink-muted text-[15px] text-ink-primary placeholder-ink-muted focus-ring transition-colors"
                   />
                 </div>
               </div>
@@ -297,11 +297,11 @@ export default function RegisterPage() {
             </Button>
           </form>
 
-          <div className="mt-6 text-center text-xs text-ink-secondary">
+          <div className="mt-6 text-sm text-ink-secondary">
             Already have an account?{' '}
             <Link
               to="/login"
-              className="font-heading font-bold text-brand-teal hover:text-brand-teal-hover underline ml-1"
+              className="link-accent ml-1"
             >
               Sign in instead
             </Link>
@@ -312,19 +312,19 @@ export default function RegisterPage() {
       {/* STEP 2: What I can teach */}
       {step === 2 && (
         <div>
-          <div className="mb-4">
-            <h2 className="font-heading font-bold text-2xl text-ink-primary">
+          <div className="mb-6">
+            <h1 className="font-display font-medium text-display-md tracking-[-0.025em] text-ink-primary">
               What can you teach?
-            </h2>
-            <p className="text-xs text-ink-secondary mt-1">
+            </h1>
+            <p className="text-base text-ink-secondary mt-2">
               Add skills you have mastered and are comfortable sharing with peers.
             </p>
           </div>
 
           {/* Current Selected Tags */}
-          <div className="min-h-[50px] p-2.5 bg-white border border-canvas-border rounded-card mb-4 flex flex-wrap gap-1.5 items-center">
+          <div className="min-h-[52px] p-2.5 bg-canvas-card border border-canvas-border-dark rounded-card mb-4 flex flex-wrap gap-1.5 items-center">
             {skillsOffered.length === 0 ? (
-              <span className="text-xs text-ink-muted italic pl-1">
+              <span className="text-sm text-ink-muted italic pl-1">
                 Select from suggestions below or type custom skills...
               </span>
             ) : (
@@ -354,7 +354,7 @@ export default function RegisterPage() {
                   addTeachSkill(currentTeachInput);
                 }
               }}
-              className="flex-1 px-3 py-2 text-xs sm:text-sm bg-white border border-canvas-border rounded-input text-ink-primary focus-ring"
+              className="flex-1 min-w-0 px-3 py-2 text-[15px] bg-canvas-card border border-canvas-border-dark rounded-input hover:border-ink-muted text-ink-primary focus-ring"
             />
             <Button
               type="button"
@@ -368,7 +368,7 @@ export default function RegisterPage() {
 
           {/* Suggestions */}
           <div className="mb-6">
-            <div className="text-[11px] font-heading font-semibold text-ink-muted uppercase tracking-wider mb-2">
+            <div className="text-sm font-heading font-semibold text-ink-secondary mb-2.5">
               Popular skills to teach:
             </div>
             <div className="flex flex-wrap gap-1.5">
@@ -379,10 +379,10 @@ export default function RegisterPage() {
                     key={sk}
                     type="button"
                     onClick={() => (isAdded ? removeTeachSkill(sk) : addTeachSkill(sk))}
-                    className={`text-xs px-2.5 py-1 rounded-full border transition-colors flex items-center gap-1 ${
+                    className={`text-sm px-2.5 py-1 rounded-button border transition-colors flex items-center gap-1.5 ${
                       isAdded
-                        ? 'bg-teach-bg text-teach-text border-teach-border font-semibold'
-                        : 'bg-canvas-subtle text-ink-secondary border-canvas-border hover:bg-white'
+                        ? 'bg-teach-bg text-teach-text border-teach-text font-semibold'
+                        : 'bg-transparent text-ink-secondary border-canvas-border-dark hover:border-ink-primary hover:text-ink-primary'
                     }`}
                   >
                     {isAdded ? <Check className="w-3 h-3" /> : <Plus className="w-3 h-3" />}
@@ -394,7 +394,7 @@ export default function RegisterPage() {
           </div>
 
           {/* Step Actions */}
-          <div className="flex items-center justify-between gap-3 pt-3 border-t border-canvas-border">
+          <div className="flex items-center justify-between gap-3 pt-4 border-t border-ink-primary">
             <Button
               type="button"
               variant="ghost"
@@ -421,19 +421,19 @@ export default function RegisterPage() {
       {/* STEP 3: What I want to learn */}
       {step === 3 && (
         <div>
-          <div className="mb-4">
-            <h2 className="font-heading font-bold text-2xl text-ink-primary">
+          <div className="mb-6">
+            <h1 className="font-display font-medium text-display-md tracking-[-0.025em] text-ink-primary">
               What do you want to learn?
-            </h2>
-            <p className="text-xs text-ink-secondary mt-1">
+            </h1>
+            <p className="text-base text-ink-secondary mt-2">
               Select skills you want community members to teach you.
             </p>
           </div>
 
           {/* Current Selected Tags */}
-          <div className="min-h-[50px] p-2.5 bg-white border border-canvas-border rounded-card mb-4 flex flex-wrap gap-1.5 items-center">
+          <div className="min-h-[52px] p-2.5 bg-canvas-card border border-canvas-border-dark rounded-card mb-4 flex flex-wrap gap-1.5 items-center">
             {skillsWanted.length === 0 ? (
-              <span className="text-xs text-ink-muted italic pl-1">
+              <span className="text-sm text-ink-muted italic pl-1">
                 Select from suggestions below or type custom skills...
               </span>
             ) : (
@@ -463,7 +463,7 @@ export default function RegisterPage() {
                   addLearnSkill(currentLearnInput);
                 }
               }}
-              className="flex-1 px-3 py-2 text-xs sm:text-sm bg-white border border-canvas-border rounded-input text-ink-primary focus-ring"
+              className="flex-1 min-w-0 px-3 py-2 text-[15px] bg-canvas-card border border-canvas-border-dark rounded-input hover:border-ink-muted text-ink-primary focus-ring"
             />
             <Button
               type="button"
@@ -477,7 +477,7 @@ export default function RegisterPage() {
 
           {/* Suggestions */}
           <div className="mb-6">
-            <div className="text-[11px] font-heading font-semibold text-ink-muted uppercase tracking-wider mb-2">
+            <div className="text-sm font-heading font-semibold text-ink-secondary mb-2.5">
               Popular skills to learn:
             </div>
             <div className="flex flex-wrap gap-1.5">
@@ -488,10 +488,10 @@ export default function RegisterPage() {
                     key={sk}
                     type="button"
                     onClick={() => (isAdded ? removeLearnSkill(sk) : addLearnSkill(sk))}
-                    className={`text-xs px-2.5 py-1 rounded-full border transition-colors flex items-center gap-1 ${
+                    className={`text-sm px-2.5 py-1 rounded-button border transition-colors flex items-center gap-1.5 ${
                       isAdded
-                        ? 'bg-learn-bg text-learn-text border-learn-border font-semibold'
-                        : 'bg-canvas-subtle text-ink-secondary border-canvas-border hover:bg-white'
+                        ? 'bg-learn-bg text-learn-text border-learn-text font-semibold'
+                        : 'bg-transparent text-ink-secondary border-canvas-border-dark hover:border-ink-primary hover:text-ink-primary'
                     }`}
                   >
                     {isAdded ? <Check className="w-3 h-3" /> : <Plus className="w-3 h-3" />}
@@ -503,7 +503,7 @@ export default function RegisterPage() {
           </div>
 
           {/* Step Actions */}
-          <div className="flex items-center justify-between gap-3 pt-3 border-t border-canvas-border">
+          <div className="flex items-center justify-between gap-3 pt-4 border-t border-ink-primary">
             <Button
               type="button"
               variant="ghost"

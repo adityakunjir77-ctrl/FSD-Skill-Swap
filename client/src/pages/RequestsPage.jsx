@@ -102,14 +102,16 @@ export default function RequestsPage() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 min-w-0">
       {/* Page Header */}
-      <div className="pb-4 border-b border-canvas-border">
-        <h1 className="font-heading font-bold text-2xl sm:text-3xl text-ink-primary flex items-center gap-2">
-          <Send className="w-6 h-6 text-brand-teal" />
-          Exchange Requests & Lifecycles
-        </h1>
-        <p className="text-xs sm:text-sm text-ink-secondary mt-1">
+      <div className="pb-6 border-b border-ink-primary">
+        <div className="flex items-baseline gap-3 sm:gap-4">
+          <span className="chapter-num text-display-sm sm:text-display-md leading-none" aria-hidden="true">3</span>
+          <h1 className="font-display font-medium text-display-sm sm:text-display-md tracking-[-0.02em] text-ink-primary">
+            Exchange Requests & Lifecycles
+          </h1>
+        </div>
+        <p className="text-base text-ink-secondary mt-2 max-w-2xl">
           Review incoming proposals, accept swaps, book study sessions, and finalize completed exchanges.
         </p>
       </div>
@@ -144,7 +146,7 @@ export default function RequestsPage() {
           onAction={() => navigate('/matches')}
         />
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-5">
           {filteredRequests.map((req) => {
             const isReceiver = req.receiver?._id === currentUser?._id;
             const partner = isReceiver ? req.sender : req.receiver;
@@ -156,20 +158,20 @@ export default function RequestsPage() {
             return (
               <div
                 key={req._id}
-                className="bg-canvas-card border border-canvas-border rounded-card p-5 shadow-soft hover:border-canvas-border-dark transition-all space-y-4"
+                className="bg-canvas-card border border-canvas-border border-t-2 border-t-ink-primary rounded-card p-4 sm:p-5 space-y-5 min-w-0"
               >
                 {/* Header: Avatars & Summary */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   {/* Both Avatars with Two-way motif */}
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-start sm:items-center gap-3 min-w-0">
                     <Avatar
                       src={req.sender?.avatar}
                       name={req.sender?.name}
                       id={req.sender?._id}
                       size="md"
                     />
-                    <div className="w-6 h-6 rounded-full bg-canvas-subtle border border-canvas-border flex items-center justify-center text-brand-teal flex-shrink-0">
-                      <ArrowRightLeft className="w-3 h-3" />
+                    <div className="w-5 h-10 flex items-center justify-center text-brand-teal flex-shrink-0" aria-hidden="true">
+                      <ArrowRightLeft className="w-4 h-4" strokeWidth={1.75} />
                     </div>
                     <Avatar
                       src={req.receiver?.avatar}
@@ -179,20 +181,20 @@ export default function RequestsPage() {
                     />
 
                     <div className="min-w-0 ml-1">
-                      <h3 className="font-heading font-bold text-sm text-ink-primary">
+                      <h3 className="font-display font-medium text-lg sm:text-title leading-snug text-ink-primary">
                         {isReceiver ? req.sender?.name : 'You'}{' '}
-                        <span className="font-normal text-ink-secondary">
+                        <span className="font-normal italic text-ink-secondary">
                           offered to teach{' '}
-                          <span className="font-semibold text-teach-text">
+                          <span className="not-italic font-medium text-teach-text">
                             {offerText}
                           </span>{' '}
                           for{' '}
-                          <span className="font-semibold text-learn-text">
+                          <span className="not-italic font-medium text-learn-text">
                             {wantText}
                           </span>
                         </span>
                       </h3>
-                      <div className="text-[11px] text-ink-muted mt-0.5">
+                      <div className="text-sm text-ink-muted mt-1 numerals">
                         {new Date(req.createdAt).toLocaleDateString([], {
                           month: 'short',
                           day: 'numeric',
@@ -224,19 +226,19 @@ export default function RequestsPage() {
 
                 {/* Personal Intro Message Quote */}
                 {req.message && (
-                  <div className="p-3 bg-canvas-subtle/80 border-l-2 border-brand-teal rounded-r-button text-xs text-ink-secondary italic flex items-start gap-2">
-                    <Quote className="w-3.5 h-3.5 text-brand-teal flex-shrink-0 mt-0.5 not-italic" />
+                  <blockquote className="pl-4 border-l-2 border-brand-teal font-display text-lg sm:text-title leading-snug text-ink-primary italic flex items-start gap-2">
+                    <Quote className="w-4 h-4 text-brand-teal flex-shrink-0 mt-1.5 not-italic" strokeWidth={1.75} aria-hidden="true" />
                     <span>"{req.message}"</span>
-                  </div>
+                  </blockquote>
                 )}
 
                 {/* ExchangeProgress 4-Dot Stepper */}
-                <div className="pt-2">
+                <div className="pt-1 overflow-x-auto">
                   <ExchangeProgress status={req.status} />
                 </div>
 
                 {/* State-Based Action Buttons */}
-                <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-canvas-border">
+                <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-canvas-border">
                   <div className="flex items-center gap-2">
                     <Button
                       variant="ghost"
@@ -247,7 +249,7 @@ export default function RequestsPage() {
                     </Button>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     {/* For Receiver when Pending: Accept / Decline */}
                     {isReceiver && req.status === 'Pending' && (
                       <>

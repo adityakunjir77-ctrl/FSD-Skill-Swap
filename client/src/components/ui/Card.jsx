@@ -13,8 +13,8 @@ export default function Card({
   return (
     <div
       onClick={onClick}
-      className={`bg-canvas-card border border-canvas-border rounded-card shadow-soft transition-colors duration-150 ${padding} ${
-        hover ? 'hover:border-canvas-border-dark' : ''
+      className={`bg-canvas-card border border-canvas-border rounded-card transition-colors duration-150 ${padding} ${
+        hover ? 'hover:border-ink-primary/60' : ''
       } ${isClickable ? 'cursor-pointer' : ''} ${className}`}
       {...props}
     >
@@ -25,13 +25,13 @@ export default function Card({
 
 Card.Header = function CardHeader({ title, subtitle, action, className = '' }) {
   return (
-    <div className={`flex items-start justify-between pb-4 border-b border-canvas-border ${className}`}>
+    <div className={`flex items-end justify-between gap-4 pb-3 border-b border-ink-primary ${className}`}>
       <div>
-        <h3 className="font-heading font-semibold text-ink-primary text-base leading-tight">
+        <h3 className="font-display font-medium text-ink-primary text-title leading-tight">
           {title}
         </h3>
         {subtitle && (
-          <p className="text-xs text-ink-muted mt-0.5">{subtitle}</p>
+          <p className="text-sm text-ink-muted mt-1">{subtitle}</p>
         )}
       </div>
       {action && <div className="ml-4 flex-shrink-0">{action}</div>}
@@ -45,7 +45,7 @@ Card.Body = function CardBody({ children, className = '' }) {
 
 Card.Footer = function CardFooter({ children, className = '' }) {
   return (
-    <div className={`mt-4 pt-3 border-t border-canvas-border flex items-center justify-between text-xs text-ink-muted ${className}`}>
+    <div className={`mt-4 pt-3 border-t border-canvas-border flex items-center justify-between text-sm text-ink-muted ${className}`}>
       {children}
     </div>
   );

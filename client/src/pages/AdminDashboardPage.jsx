@@ -224,12 +224,12 @@ export default function AdminDashboardPage() {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* VIEW 1: OVERVIEW */}
       {isOverview && (
-        <div className="space-y-6">
+        <div className="space-y-10">
           {/* KPI Stat Tiles */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-x-6 gap-y-6">
             <StatTile
               label="Total Users"
               value={stats?.totalUsers || users.length}
@@ -269,17 +269,16 @@ export default function AdminDashboardPage() {
           </div>
 
           {/* Recent Users & Exchanges Split */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-8">
             {/* Recent Users preview */}
-            <div className="bg-canvas-card border border-canvas-border rounded-card p-5 shadow-soft">
-              <div className="flex items-center justify-between pb-3 border-b border-canvas-border mb-3">
-                <h2 className="font-heading font-bold text-sm text-ink-primary flex items-center gap-2">
-                  <Users className="w-4 h-4 text-brand-teal" />
+            <div className="section-open">
+              <div className="flex items-baseline justify-between pb-3 border-b border-canvas-border">
+                <h2 className="font-display font-medium text-title text-ink-primary">
                   Recent Member Registrations
                 </h2>
                 <Link
                   to="/admin/users"
-                  className="text-xs font-heading font-semibold text-brand-teal hover:underline"
+                  className="text-sm font-heading font-semibold text-brand-teal hover:underline underline-offset-4"
                 >
                   View all →
                 </Link>
@@ -287,14 +286,14 @@ export default function AdminDashboardPage() {
 
               <div className="divide-y divide-canvas-border">
                 {users.slice(0, 5).map((u) => (
-                  <div key={u._id} className="py-2.5 flex items-center justify-between gap-3 text-xs">
+                  <div key={u._id} className="py-3 flex items-center justify-between gap-3 text-sm">
                     <div className="flex items-center gap-2.5 min-w-0">
                       <Avatar src={u.avatar} name={u.name} id={u._id} size="xs" />
                       <div className="min-w-0">
                         <span className="font-heading font-semibold text-ink-primary truncate block">
                           {u.name}
                         </span>
-                        <span className="text-[11px] text-ink-muted truncate block">
+                        <span className="text-sm text-ink-muted truncate block">
                           {u.email}
                         </span>
                       </div>
@@ -309,15 +308,14 @@ export default function AdminDashboardPage() {
             </div>
 
             {/* Recent Exchanges preview */}
-            <div className="bg-canvas-card border border-canvas-border rounded-card p-5 shadow-soft">
-              <div className="flex items-center justify-between pb-3 border-b border-canvas-border mb-3">
-                <h2 className="font-heading font-bold text-sm text-ink-primary flex items-center gap-2">
-                  <Repeat className="w-4 h-4 text-brand-coral" />
+            <div className="section-open">
+              <div className="flex items-baseline justify-between pb-3 border-b border-canvas-border">
+                <h2 className="font-display font-medium text-title text-ink-primary">
                   Latest Peer Exchanges
                 </h2>
                 <Link
                   to="/admin/exchanges"
-                  className="text-xs font-heading font-semibold text-brand-teal hover:underline"
+                  className="text-sm font-heading font-semibold text-brand-teal hover:underline underline-offset-4"
                 >
                   View audit log →
                 </Link>
@@ -325,12 +323,12 @@ export default function AdminDashboardPage() {
 
               <div className="divide-y divide-canvas-border">
                 {exchanges.slice(0, 5).map((ex) => (
-                  <div key={ex._id} className="py-2.5 flex items-center justify-between gap-3 text-xs">
+                  <div key={ex._id} className="py-3 flex items-center justify-between gap-3 text-sm">
                     <div className="min-w-0">
                       <div className="font-heading font-semibold text-ink-primary truncate">
                         {ex.sender?.name} ↔ {ex.receiver?.name}
                       </div>
-                      <div className="text-[11px] text-ink-secondary truncate">
+                      <div className="text-sm text-ink-secondary truncate">
                         {ex.offeredSkill} for {ex.wantedSkill}
                       </div>
                     </div>
@@ -359,14 +357,14 @@ export default function AdminDashboardPage() {
 
       {/* VIEW 2: USER MODERATION */}
       {isUsersView && (
-        <div className="bg-canvas-card border border-canvas-border rounded-card shadow-soft overflow-hidden">
+        <div className="bg-canvas-card border border-canvas-border border-t-2 border-t-ink-primary rounded-card overflow-hidden">
           {/* Header & Search */}
-          <div className="p-4 border-b border-canvas-border bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="px-4 sm:px-5 py-4 border-b border-canvas-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <h2 className="font-heading font-bold text-base text-ink-primary">
+              <h2 className="font-display font-medium text-title text-ink-primary">
                 User Moderation Directory ({filteredUsers.length})
               </h2>
-              <p className="text-xs text-ink-secondary mt-0.5">
+              <p className="text-sm text-ink-secondary mt-1">
                 Audit registered users, toggle account active status, and moderate abusive profiles.
               </p>
             </div>
@@ -378,15 +376,15 @@ export default function AdminDashboardPage() {
                 placeholder="Search by name, email, location..."
                 value={userSearch}
                 onChange={(e) => setUserSearch(e.target.value)}
-                className="w-full pl-9 pr-3 py-1.5 text-xs bg-canvas-subtle border border-canvas-border rounded-input text-ink-primary focus-ring"
+                className="w-full pl-9 pr-3 py-2 text-sm bg-canvas-card border border-canvas-border-dark rounded-input text-ink-primary hover:border-ink-muted focus-ring"
               />
             </div>
           </div>
 
           {/* Sticky Table */}
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-canvas-subtle/80 border-b border-canvas-border text-ink-muted font-heading font-semibold sticky top-0 uppercase tracking-wider">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-canvas border-b-2 border-ink-primary text-ink-secondary font-heading font-semibold sticky top-0">
                 <tr>
                   <th className="py-3 px-4">Member</th>
                   <th className="py-3 px-4">Role</th>
@@ -400,7 +398,7 @@ export default function AdminDashboardPage() {
                 {filteredUsers.map((u) => {
                   const isCurrent = u._id === currentUser?._id;
                   return (
-                    <tr key={u._id} className="hover:bg-canvas-subtle/50 transition-colors">
+                    <tr key={u._id} className="hover:bg-canvas transition-colors">
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2.5">
                           <Avatar src={u.avatar} name={u.name} id={u._id} size="sm" />
@@ -408,7 +406,7 @@ export default function AdminDashboardPage() {
                             <div className="font-heading font-semibold text-ink-primary">
                               {u.name} {isCurrent && '(You)'}
                             </div>
-                            <div className="text-[11px] text-ink-muted">{u.email}</div>
+                            <div className="text-sm text-ink-muted">{u.email}</div>
                           </div>
                         </div>
                       </td>
@@ -463,15 +461,15 @@ export default function AdminDashboardPage() {
 
       {/* VIEW 3: SKILL CATALOG AUDIT */}
       {isSkillsView && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Skills List Table (8 cols) */}
-          <div className="lg:col-span-8 bg-canvas-card border border-canvas-border rounded-card shadow-soft overflow-hidden">
-            <div className="p-4 border-b border-canvas-border bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="lg:col-span-8 bg-canvas-card border border-canvas-border border-t-2 border-t-ink-primary rounded-card overflow-hidden">
+            <div className="px-4 sm:px-5 py-4 border-b border-canvas-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <h2 className="font-heading font-bold text-base text-ink-primary">
+                <h2 className="font-display font-medium text-title text-ink-primary">
                   Skill Catalog Entries ({filteredSkills.length})
                 </h2>
-                <p className="text-xs text-ink-secondary mt-0.5">
+                <p className="text-sm text-ink-secondary mt-1">
                   Audit registered skills and categories. Remove duplicate or inappropriate skills.
                 </p>
               </div>
@@ -483,14 +481,14 @@ export default function AdminDashboardPage() {
                   placeholder="Filter skills..."
                   value={skillSearch}
                   onChange={(e) => setSkillSearch(e.target.value)}
-                  className="w-full pl-9 pr-3 py-1.5 text-xs bg-canvas-subtle border border-canvas-border rounded-input text-ink-primary focus-ring"
+                  className="w-full pl-9 pr-3 py-2 text-sm bg-canvas-card border border-canvas-border-dark rounded-input text-ink-primary hover:border-ink-muted focus-ring"
                 />
               </div>
             </div>
 
             <div className="overflow-x-auto max-h-[500px]">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-canvas-subtle/80 border-b border-canvas-border text-ink-muted font-heading font-semibold sticky top-0 uppercase tracking-wider">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-canvas border-b-2 border-ink-primary text-ink-secondary font-heading font-semibold sticky top-0">
                   <tr>
                     <th className="py-2.5 px-4">Skill Name</th>
                     <th className="py-2.5 px-4">Category</th>
@@ -499,7 +497,7 @@ export default function AdminDashboardPage() {
                 </thead>
                 <tbody className="divide-y divide-canvas-border">
                   {filteredSkills.map((sk) => (
-                    <tr key={sk._id} className="hover:bg-canvas-subtle/50 transition-colors">
+                    <tr key={sk._id} className="hover:bg-canvas transition-colors">
                       <td className="py-2.5 px-4 font-heading font-semibold text-ink-primary">
                         {sk.name}
                       </td>
@@ -526,15 +524,14 @@ export default function AdminDashboardPage() {
           </div>
 
           {/* Add Skill Panel (4 cols) */}
-          <div className="lg:col-span-4 bg-canvas-card border border-canvas-border rounded-card p-5 shadow-soft space-y-4">
-            <h2 className="font-heading font-bold text-sm text-ink-primary flex items-center gap-2">
-              <Plus className="w-4 h-4 text-brand-teal" />
+          <div className="lg:col-span-4 section-open space-y-4">
+            <h2 className="font-display font-medium text-title text-ink-primary">
               Add New Platform Skill
             </h2>
 
-            <form onSubmit={handleCreateSkill} className="space-y-3.5 text-xs">
+            <form onSubmit={handleCreateSkill} className="space-y-4 text-sm">
               <div>
-                <label className="block font-heading font-semibold text-ink-primary mb-1">
+                <label className="block font-heading font-semibold text-ink-primary mb-1.5">
                   Skill Title
                 </label>
                 <input
@@ -543,18 +540,18 @@ export default function AdminDashboardPage() {
                   placeholder="e.g. Go Programming"
                   value={newSkill.name}
                   onChange={(e) => setNewSkill({ ...newSkill, name: e.target.value })}
-                  className="w-full px-3 py-2 bg-white border border-canvas-border rounded-input text-ink-primary focus-ring"
+                  className="w-full px-3 py-2 bg-canvas-card border border-canvas-border-dark rounded-input hover:border-ink-muted text-ink-primary focus-ring"
                 />
               </div>
 
               <div>
-                <label className="block font-heading font-semibold text-ink-primary mb-1">
+                <label className="block font-heading font-semibold text-ink-primary mb-1.5">
                   Category
                 </label>
                 <select
                   value={newSkill.category}
                   onChange={(e) => setNewSkill({ ...newSkill, category: e.target.value })}
-                  className="w-full px-3 py-2 bg-white border border-canvas-border rounded-input text-ink-primary focus-ring"
+                  className="w-full px-3 py-2 bg-canvas-card border border-canvas-border-dark rounded-input hover:border-ink-muted text-ink-primary focus-ring"
                 >
                   {[
                     'Programming',
@@ -578,7 +575,7 @@ export default function AdminDashboardPage() {
               </div>
 
               <div>
-                <label className="block font-heading font-semibold text-ink-primary mb-1">
+                <label className="block font-heading font-semibold text-ink-primary mb-1.5">
                   Description (Optional)
                 </label>
                 <textarea
@@ -586,7 +583,7 @@ export default function AdminDashboardPage() {
                   placeholder="Short description..."
                   value={newSkill.description}
                   onChange={(e) => setNewSkill({ ...newSkill, description: e.target.value })}
-                  className="w-full px-3 py-2 bg-white border border-canvas-border rounded-input text-ink-primary focus-ring resize-none leading-relaxed"
+                  className="w-full px-3 py-2 bg-canvas-card border border-canvas-border-dark rounded-input hover:border-ink-muted text-ink-primary focus-ring resize-none leading-relaxed"
                 />
               </div>
 
@@ -607,23 +604,23 @@ export default function AdminDashboardPage() {
 
       {/* VIEW 4: GLOBAL EXCHANGES AUDIT */}
       {isExchangesView && (
-        <div className="bg-canvas-card border border-canvas-border rounded-card shadow-soft overflow-hidden">
-          <div className="p-4 border-b border-canvas-border bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="bg-canvas-card border border-canvas-border border-t-2 border-t-ink-primary rounded-card overflow-hidden">
+          <div className="px-4 sm:px-5 py-4 border-b border-canvas-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <h2 className="font-heading font-bold text-base text-ink-primary">
+              <h2 className="font-display font-medium text-title text-ink-primary">
                 Global Exchange Audit Logs ({filteredExchanges.length})
               </h2>
-              <p className="text-xs text-ink-secondary mt-0.5">
+              <p className="text-sm text-ink-secondary mt-1">
                 Complete transactional audit trail of all peer skill exchanges initiated across the platform.
               </p>
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="text-xs text-ink-muted">Filter status:</span>
+              <span className="text-sm text-ink-muted whitespace-nowrap">Filter status:</span>
               <select
                 value={exchangeFilter}
                 onChange={(e) => setExchangeFilter(e.target.value)}
-                className="px-3 py-1.5 text-xs bg-canvas-subtle border border-canvas-border rounded-input text-ink-primary focus-ring"
+                className="px-3 py-2 text-sm bg-canvas-card border border-canvas-border-dark rounded-input text-ink-primary hover:border-ink-muted focus-ring"
               >
                 <option value="All">All Statuses</option>
                 <option value="Pending">Pending</option>
@@ -637,8 +634,8 @@ export default function AdminDashboardPage() {
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-canvas-subtle/80 border-b border-canvas-border text-ink-muted font-heading font-semibold sticky top-0 uppercase tracking-wider">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-canvas border-b-2 border-ink-primary text-ink-secondary font-heading font-semibold sticky top-0">
                 <tr>
                   <th className="py-3 px-4">Sender</th>
                   <th className="py-3 px-4">Receiver</th>
@@ -650,7 +647,7 @@ export default function AdminDashboardPage() {
               </thead>
               <tbody className="divide-y divide-canvas-border">
                 {filteredExchanges.map((ex) => (
-                  <tr key={ex._id} className="hover:bg-canvas-subtle/50 transition-colors">
+                  <tr key={ex._id} className="hover:bg-canvas transition-colors">
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-2">
                         <Avatar src={ex.sender?.avatar} name={ex.sender?.name} id={ex.sender?._id} size="xs" />
@@ -693,7 +690,7 @@ export default function AdminDashboardPage() {
                         {ex.status}
                       </Pill>
                     </td>
-                    <td className="py-3 px-4 text-right text-ink-muted">
+                    <td className="py-3 px-4 text-right text-ink-muted numerals whitespace-nowrap">
                       {new Date(ex.createdAt).toLocaleDateString([], {
                         month: 'short',
                         day: 'numeric',

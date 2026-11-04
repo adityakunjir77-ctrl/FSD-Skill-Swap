@@ -39,7 +39,7 @@ export default function RatingStars({
               onMouseLeave={() => interactive && setHoverRating(0)}
               className={`${
                 interactive
-                  ? 'cursor-pointer transition-transform hover:scale-110 focus:outline-none'
+                  ? 'cursor-pointer transition-colors focus:outline-none'
                   : 'cursor-default pointer-events-none'
               } p-0.5`}
               aria-label={`${starNumber} out of ${max} stars`}
@@ -47,7 +47,7 @@ export default function RatingStars({
               <Star
                 className={`${starSizes} transition-colors ${
                   isFilled
-                    ? 'text-[#F59E0B] fill-[#F59E0B]'
+                    ? 'text-ink-primary fill-ink-primary'
                     : 'text-canvas-border-dark fill-transparent'
                 }`}
                 strokeWidth={1.75}
@@ -58,13 +58,13 @@ export default function RatingStars({
       </div>
 
       {showScore && (
-        <span className="font-heading font-semibold text-xs text-ink-primary">
+        <span className="font-display font-medium text-base text-ink-primary numerals">
           {Number(rating).toFixed(1)}
         </span>
       )}
 
       {count !== undefined && (
-        <span className="text-xs text-ink-muted">
+        <span className="text-sm text-ink-muted numerals">
           ({count})
         </span>
       )}

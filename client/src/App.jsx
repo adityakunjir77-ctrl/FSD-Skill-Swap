@@ -30,7 +30,7 @@ const ProtectedRoute = ({ children }) => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-canvas">
-        <div className="w-9 h-9 border-3 border-brand-teal border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-9 h-9 border-2 border-ink-primary border-t-transparent rounded-full animate-spin" role="status" aria-label="Loading"></div>
       </div>
     );
   }
@@ -42,8 +42,8 @@ const AdminRoute = ({ children }) => {
   const { isAuthenticated, isAdmin, loading } = useAuth();
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-brand-teal-dark">
-        <div className="w-9 h-9 border-3 border-brand-coral border-t-transparent rounded-full animate-spin"></div>
+      <div className="min-h-screen flex items-center justify-center bg-ink-primary">
+        <div className="w-9 h-9 border-2 border-white border-t-transparent rounded-full animate-spin" role="status" aria-label="Loading"></div>
       </div>
     );
   }

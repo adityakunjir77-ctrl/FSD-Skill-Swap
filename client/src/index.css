@@ -6,21 +6,85 @@
   body {
     font-family: 'Source Sans 3', system-ui, -apple-system, sans-serif;
     color: #14201E;
-    background-color: #F7F8F7;
-    font-size: 15px;
-    line-height: 1.5;
+    background-color: #F6F7F5;
+    font-size: 16px;
+    line-height: 1.55;
+    font-feature-settings: 'kern', 'liga';
+    text-rendering: optimizeLegibility;
   }
 
-  h1, h2, h3, h4, h5, h6 {
-    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  h1, h2, h3 {
+    font-family: 'Newsreader', Georgia, 'Times New Roman', serif;
+    font-optical-sizing: auto;
+    font-weight: 500;
     color: #14201E;
-    letter-spacing: -0.015em;
+    letter-spacing: -0.012em;
+  }
+
+  h4, h5, h6 {
+    font-family: 'Source Sans 3', system-ui, -apple-system, sans-serif;
+    color: #14201E;
+  }
+
+  /* Visible keyboard focus everywhere, including elements that suppress the default outline */
+  :focus-visible {
+    outline: 2px solid #0F766E !important;
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* Section label: a short rule followed by a sentence-case label, used above editorial sections */
+  .section-label {
+    @apply flex items-center gap-3 text-sm font-semibold text-ink-secondary;
+  }
+  .section-label::before {
+    content: '';
+    @apply block w-6 h-px bg-ink-primary;
+  }
+
+  /* Numbered chapter marker for real sequences (exchange lifecycle, how-it-works steps) */
+  .chapter-num {
+    @apply font-display italic text-brand-teal tabular-nums;
+    font-variant-numeric: lining-nums tabular-nums;
+  }
+
+  /* Link-as-button styles, mirroring the Button component variants (for <Link> CTAs) */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 h-10 px-4 rounded-button border text-sm font-heading font-semibold tracking-[0.005em] transition-colors duration-150 select-none whitespace-nowrap;
+  }
+  .btn-sm {
+    @apply h-8 px-3 text-xs gap-1.5;
+  }
+  .btn-primary {
+    @apply bg-ink-primary border-ink-primary text-white hover:bg-brand-teal-dark hover:border-brand-teal-dark;
+  }
+  .btn-secondary {
+    @apply bg-transparent border-ink-primary/80 text-ink-primary hover:bg-ink-primary hover:text-white;
+  }
+
+  /* Open editorial section: a heavy top rule instead of a boxed card */
+  .section-open {
+    @apply border-t-2 border-ink-primary pt-4;
+  }
+
+  /* Underlined text link in the accent colour */
+  .link-accent {
+    @apply text-brand-teal font-semibold underline decoration-brand-teal/30 underline-offset-4 hover:decoration-brand-teal transition-colors;
   }
 }
 
 @layer utilities {
   .focus-ring {
     @apply focus:outline-none focus:ring-2 focus:ring-brand-teal/20 focus:border-brand-teal;
+  }
+
+  .safe-area-bottom {
+    padding-bottom: max(0.25rem, env(safe-area-inset-bottom));
+  }
+
+  .numerals {
+    font-variant-numeric: lining-nums tabular-nums;
   }
 }
 
@@ -31,21 +95,21 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: #F7F8F7;
+  background: #F6F7F5;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #D1D7D4;
-  border-radius: 9999px;
+  background: #D9DEDB;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #8A9794;
+  background: #66726F;
 }
 
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;

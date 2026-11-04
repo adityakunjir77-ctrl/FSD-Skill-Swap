@@ -100,8 +100,8 @@ export default function SendExchangeModal({
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Mini SwapCard Preview */}
-        <div className="p-3.5 bg-canvas-subtle border border-canvas-border rounded-card">
-          <div className="flex items-center justify-between text-xs">
+        <div className="py-3.5 border-y border-ink-primary">
+          <div className="flex items-center justify-between gap-2 text-sm">
             <div className="flex items-center gap-2">
               <Avatar
                 src={currentUser?.avatar}
@@ -112,8 +112,8 @@ export default function SendExchangeModal({
               <span className="font-heading font-semibold text-ink-primary">You</span>
             </div>
 
-            <div className="w-6 h-6 rounded-full bg-white border border-canvas-border flex items-center justify-center text-brand-teal">
-              <ArrowRightLeft className="w-3 h-3" />
+            <div className="w-6 h-6 flex items-center justify-center text-brand-teal" aria-hidden="true">
+              <ArrowRightLeft className="w-4 h-4" strokeWidth={1.75} />
             </div>
 
             <div className="flex items-center gap-2">
@@ -129,17 +129,17 @@ export default function SendExchangeModal({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 mt-3 pt-2.5 border-t border-canvas-border/80 text-xs">
-            <div>
-              <span className="text-[10px] uppercase font-bold text-teach-text block mb-1">
+          <div className="grid grid-cols-2 mt-3 pt-3 border-t border-canvas-border text-xs">
+            <div className="pr-3 border-r border-canvas-border">
+              <span className="text-xs font-heading font-semibold text-teach-text block mb-1.5">
                 You Teach:
               </span>
               <Pill variant="teach" size="xs">
                 {resolvedOffered || 'Select below'}
               </Pill>
             </div>
-            <div>
-              <span className="text-[10px] uppercase font-bold text-learn-text block mb-1">
+            <div className="pl-3">
+              <span className="text-xs font-heading font-semibold text-learn-text block mb-1.5">
                 They Teach:
               </span>
               <Pill variant="learn" size="xs">
@@ -151,13 +151,13 @@ export default function SendExchangeModal({
 
         {/* Skill You Offer */}
         <div>
-          <label className="block text-xs font-heading font-semibold text-ink-primary mb-1">
+          <label className="block text-sm font-heading font-semibold text-ink-primary mb-1.5">
             Skill You Offer to Teach
           </label>
           <select
             value={offeredSkill}
             onChange={(e) => setOfferedSkill(e.target.value)}
-            className="w-full px-3 py-2 text-xs sm:text-sm bg-white border border-canvas-border rounded-input text-ink-primary focus-ring"
+            className="w-full px-3 py-2 text-[15px] bg-canvas-card border border-canvas-border-dark rounded-input hover:border-ink-muted text-ink-primary focus-ring"
           >
             {currentOffers.map((sk, idx) => (
               <option key={idx} value={sk}>
@@ -173,20 +173,20 @@ export default function SendExchangeModal({
               placeholder="Type your skill..."
               value={customOffered}
               onChange={(e) => setCustomOffered(e.target.value)}
-              className="mt-2 w-full px-3 py-2 text-xs sm:text-sm bg-white border border-canvas-border rounded-input text-ink-primary focus-ring"
+              className="mt-2 w-full px-3 py-2 text-[15px] bg-canvas-card border border-canvas-border-dark rounded-input hover:border-ink-muted text-ink-primary focus-ring"
             />
           )}
         </div>
 
         {/* Skill You Want */}
         <div>
-          <label className="block text-xs font-heading font-semibold text-ink-primary mb-1">
+          <label className="block text-sm font-heading font-semibold text-ink-primary mb-1.5">
             Skill You Want to Learn from {targetPartner.name}
           </label>
           <select
             value={wantedSkill}
             onChange={(e) => setWantedSkill(e.target.value)}
-            className="w-full px-3 py-2 text-xs sm:text-sm bg-white border border-canvas-border rounded-input text-ink-primary focus-ring"
+            className="w-full px-3 py-2 text-[15px] bg-canvas-card border border-canvas-border-dark rounded-input hover:border-ink-muted text-ink-primary focus-ring"
           >
             {partnerOffers.map((sk, idx) => (
               <option key={idx} value={sk}>
@@ -202,14 +202,14 @@ export default function SendExchangeModal({
               placeholder="Type skill name..."
               value={customWanted}
               onChange={(e) => setCustomWanted(e.target.value)}
-              className="mt-2 w-full px-3 py-2 text-xs sm:text-sm bg-white border border-canvas-border rounded-input text-ink-primary focus-ring"
+              className="mt-2 w-full px-3 py-2 text-[15px] bg-canvas-card border border-canvas-border-dark rounded-input hover:border-ink-muted text-ink-primary focus-ring"
             />
           )}
         </div>
 
         {/* Message */}
         <div>
-          <label className="block text-xs font-heading font-semibold text-ink-primary mb-1">
+          <label className="block text-sm font-heading font-semibold text-ink-primary mb-1.5">
             Introductory Message
           </label>
           <textarea
@@ -217,7 +217,7 @@ export default function SendExchangeModal({
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             placeholder="Share why you'd like to swap skills and your goals..."
-            className="w-full px-3 py-2 text-xs sm:text-sm bg-white border border-canvas-border rounded-input text-ink-primary focus-ring leading-relaxed resize-none"
+            className="w-full px-3 py-2 text-[15px] bg-canvas-card border border-canvas-border-dark rounded-input hover:border-ink-muted text-ink-primary focus-ring leading-relaxed resize-none"
           />
         </div>
       </form>

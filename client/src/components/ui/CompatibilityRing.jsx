@@ -14,9 +14,9 @@ export default function CompatibilityRing({
 
   let strokeColor = '#0F766E'; // teal for high
   if (normalizedScore < 50) {
-    strokeColor = '#8A9794';
+    strokeColor = '#66726F';
   } else if (normalizedScore < 80) {
-    strokeColor = '#F2674A'; // coral
+    strokeColor = '#14201E'; // ink for mid range
   }
 
   return (
@@ -36,7 +36,7 @@ export default function CompatibilityRing({
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke="#E4E7E5"
+          stroke="#D9DEDB"
           strokeWidth={strokeWidth}
           fill="none"
         />
@@ -49,14 +49,14 @@ export default function CompatibilityRing({
           strokeWidth={strokeWidth}
           strokeDasharray={circumference}
           strokeDashoffset={strokeDashoffset}
-          strokeLinecap="round"
+          strokeLinecap="butt"
           fill="none"
           className="transition-all duration-500 ease-out"
         />
       </svg>
 
       {showLabel && (
-        <span className="absolute font-heading font-bold text-[11px] text-ink-primary select-none">
+        <span className="absolute font-display font-medium text-[13px] text-ink-primary numerals select-none">
           {normalizedScore}%
         </span>
       )}

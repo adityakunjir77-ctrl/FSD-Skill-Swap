@@ -92,7 +92,7 @@ export default function ScheduleSessionModal({
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-xs font-heading font-semibold text-ink-primary mb-1">
+          <label className="block text-sm font-heading font-semibold text-ink-primary mb-1.5">
             Session Topic or Focus
           </label>
           <input
@@ -102,13 +102,13 @@ export default function ScheduleSessionModal({
             value={formData.topic}
             onChange={handleChange}
             placeholder="e.g. React Hooks Deep-Dive & Python Basics"
-            className="w-full px-3 py-2 text-xs sm:text-sm bg-white border border-canvas-border rounded-input text-ink-primary focus-ring"
+            className="w-full px-3 py-2 text-[15px] bg-canvas-card border border-canvas-border-dark rounded-input hover:border-ink-muted text-ink-primary focus-ring"
           />
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-heading font-semibold text-ink-primary mb-1">
+            <label className="block text-sm font-heading font-semibold text-ink-primary mb-1.5">
               Date
             </label>
             <input
@@ -117,12 +117,12 @@ export default function ScheduleSessionModal({
               required
               value={formData.date}
               onChange={handleChange}
-              className="w-full px-3 py-2 text-xs sm:text-sm bg-white border border-canvas-border rounded-input text-ink-primary focus-ring"
+              className="w-full px-3 py-2 text-[15px] bg-canvas-card border border-canvas-border-dark rounded-input hover:border-ink-muted text-ink-primary focus-ring"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-heading font-semibold text-ink-primary mb-1">
+            <label className="block text-sm font-heading font-semibold text-ink-primary mb-1.5">
               Time
             </label>
             <input
@@ -131,13 +131,13 @@ export default function ScheduleSessionModal({
               required
               value={formData.time}
               onChange={handleChange}
-              className="w-full px-3 py-2 text-xs sm:text-sm bg-white border border-canvas-border rounded-input text-ink-primary focus-ring"
+              className="w-full px-3 py-2 text-[15px] bg-canvas-card border border-canvas-border-dark rounded-input hover:border-ink-muted text-ink-primary focus-ring"
             />
           </div>
         </div>
 
         <div>
-          <label className="block text-xs font-heading font-semibold text-ink-primary mb-1">
+          <label className="block text-sm font-heading font-semibold text-ink-primary mb-1.5">
             Notes / Agenda
           </label>
           <textarea
@@ -146,7 +146,7 @@ export default function ScheduleSessionModal({
             value={formData.message}
             onChange={handleChange}
             placeholder="Mention any links, preparation materials or goals for the session..."
-            className="w-full px-3 py-2 text-xs sm:text-sm bg-white border border-canvas-border rounded-input text-ink-primary focus-ring leading-relaxed resize-none"
+            className="w-full px-3 py-2 text-[15px] bg-canvas-card border border-canvas-border-dark rounded-input hover:border-ink-muted text-ink-primary focus-ring leading-relaxed resize-none"
           />
         </div>
       </form>
