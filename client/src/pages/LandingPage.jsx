@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import API from '../services/api';
-import Button from '../components/ui/Button';
 import Pill from '../components/ui/Pill';
 import SwapCard from '../components/ui/SwapCard';
 import {

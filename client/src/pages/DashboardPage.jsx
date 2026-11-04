@@ -6,7 +6,6 @@ import { getUserExchanges } from '../services/exchangeService';
 import { Link, useNavigate } from 'react-router-dom';
 import SwapCard from '../components/ui/SwapCard';
 import StatTile from '../components/ui/StatTile';
-import Button from '../components/ui/Button';
 import Pill from '../components/ui/Pill';
 import Avatar from '../components/ui/Avatar';
 import Skeleton from '../components/ui/Skeleton';

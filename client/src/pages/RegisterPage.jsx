@@ -193,9 +193,9 @@ export default function RegisterPage() {
       {step === 1 && (
         <div>
           <div className="mb-6">
-            <h2 className="font-display font-medium text-display-md tracking-[-0.025em] text-ink-primary">
+            <h1 className="font-display font-medium text-display-md tracking-[-0.025em] text-ink-primary">
               Create Your Account
-            </h2>
+            </h1>
             <p className="text-base text-ink-secondary mt-2">
               Join the reciprocal peer learning community
             </p>
@@ -313,9 +313,9 @@ export default function RegisterPage() {
       {step === 2 && (
         <div>
           <div className="mb-6">
-            <h2 className="font-display font-medium text-display-md tracking-[-0.025em] text-ink-primary">
+            <h1 className="font-display font-medium text-display-md tracking-[-0.025em] text-ink-primary">
               What can you teach?
-            </h2>
+            </h1>
             <p className="text-base text-ink-secondary mt-2">
               Add skills you have mastered and are comfortable sharing with peers.
             </p>
@@ -422,9 +422,9 @@ export default function RegisterPage() {
       {step === 3 && (
         <div>
           <div className="mb-6">
-            <h2 className="font-display font-medium text-display-md tracking-[-0.025em] text-ink-primary">
+            <h1 className="font-display font-medium text-display-md tracking-[-0.025em] text-ink-primary">
               What do you want to learn?
-            </h2>
+            </h1>
             <p className="text-base text-ink-secondary mt-2">
               Select skills you want community members to teach you.
             </p>

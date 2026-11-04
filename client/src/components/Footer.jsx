@@ -36,9 +36,9 @@ export default function Footer() {
 
           {/* Quick Links */}
           <div className="md:col-span-2 md:col-start-8">
-            <h4 className="text-sm font-heading font-semibold text-ink-primary mb-3 pb-2 border-b border-canvas-border">
+            <h2 className="text-sm font-heading font-semibold text-ink-primary mb-3 pb-2 border-b border-canvas-border">
               Explore
-            </h4>
+            </h2>
             <ul className="space-y-2 text-sm">
               <li>
                 <Link to="/discover" className="hover:text-ink-primary hover:underline decoration-brand-teal underline-offset-4 transition-colors">
@@ -60,9 +60,9 @@ export default function Footer() {
 
           {/* Academic Info */}
           <div className="md:col-span-3">
-            <h4 className="text-sm font-heading font-semibold text-ink-primary mb-3 pb-2 border-b border-canvas-border">
+            <h2 className="text-sm font-heading font-semibold text-ink-primary mb-3 pb-2 border-b border-canvas-border">
               Academic Project
-            </h4>
+            </h2>
             <p className="text-sm text-ink-muted leading-relaxed mb-3">
               Full-Stack MERN Architecture with real-time Socket.io and reciprocal skill matching.
             </p>

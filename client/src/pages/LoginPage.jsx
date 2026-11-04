@@ -75,9 +75,9 @@ export default function LoginPage() {
   return (
     <div>
       <div className="mb-8">
-        <h2 className="font-display font-medium text-display-md sm:text-display-lg tracking-[-0.025em] text-ink-primary">
+        <h1 className="font-display font-medium text-display-md sm:text-display-lg tracking-[-0.025em] text-ink-primary">
           Sign In
-        </h2>
+        </h1>
         <p className="text-base text-ink-secondary mt-2">
           Access your skill exchanges, sessions, and messages
         </p>
