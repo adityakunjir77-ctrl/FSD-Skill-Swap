@@ -1,42 +1,59 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { getAllUsers } from '../services/userService';
 import { getSkillCategories } from '../services/skillService';
 import { useAuth } from '../context/AuthContext';
-import { useNotification } from '../context/NotificationContext';
+import { useToast } from '../components/ui/Toast';
+import Avatar from '../components/ui/Avatar';
+import Pill from '../components/ui/Pill';
+import Button from '../components/ui/Button';
+import RatingStars from '../components/ui/RatingStars';
+import Skeleton from '../components/ui/Skeleton';
+import EmptyState from '../components/ui/EmptyState';
 import SendExchangeModal from '../components/SendExchangeModal';
-import { 
-  Compass, 
-  Search, 
-  Filter, 
-  BookOpen, 
-  Sparkles, 
-  Star, 
-  MapPin, 
-  Briefcase, 
-  Send, 
-  User as UserIcon,
-  Loader2,
-  X
+import {
+  Compass,
+  Search,
+  Filter,
+  MapPin,
+  Briefcase,
+  LayoutGrid,
+  List,
+  X,
+  ArrowRightLeft,
+  ArrowRight,
 } from 'lucide-react';
 
-const SkillDirectoryPage = () => {
-  const { user: currentUser, isAuthenticated } = useAuth();
-  const { showNotification } = useNotification();
+export default function SkillDirectoryPage() {
+  const { user: currentUser } = useAuth();
+  const { error } = useToast();
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [users, setUsers] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('All');
+  // Filter states
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
+  const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || 'All');
+  const [selectedExperience, setSelectedExperience] = useState('All');
+  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
 
-  // Modals
-  const [selectedUserModal, setSelectedUserModal] = useState(null);
+  // Modal
   const [exchangePartnerModal, setExchangePartnerModal] = useState(null);
 
   useEffect(() => {
     fetchDirectoryData();
   }, []);
+
+  // Sync url param changes to category
+  useEffect(() => {
+    const cat = searchParams.get('category');
+    if (cat) setSelectedCategory(cat);
+    const q = searchParams.get('search');
+    if (q) setSearchQuery(q);
+  }, [searchParams]);
 
   const fetchDirectoryData = async () => {
     setLoading(true);
@@ -48,73 +65,155 @@ const SkillDirectoryPage = () => {
       if (usersRes.success) setUsers(usersRes.data);
       if (catRes.success) setCategories(catRes.data);
     } catch (err) {
-      showNotification('Failed to load skill directory data', 'error');
+      error('Failed to load skill directory data');
     } finally {
       setLoading(false);
     }
   };
 
+  const handleCategorySelect = (catName) => {
+    setSelectedCategory(catName);
+    if (catName === 'All') {
+      searchParams.delete('category');
+    } else {
+      searchParams.set('category', catName);
+    }
+    setSearchParams(searchParams);
+  };
+
   const filteredUsers = users.filter((u) => {
+    // Exclude logged in user
     if (currentUser && u._id === currentUser._id) return false;
 
+    // Search query matching
+    const query = searchQuery.toLowerCase().trim();
     const matchesSearch =
-      !searchQuery ||
-      u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      u.skillsOffered.some((sk) => (typeof sk === 'object' ? sk.name : sk).toLowerCase().includes(searchQuery.toLowerCase())) ||
-      u.skillsWanted.some((sk) => (typeof sk === 'object' ? sk.name : sk).toLowerCase().includes(searchQuery.toLowerCase()));
+      !query ||
+      u.name?.toLowerCase().includes(query) ||
+      u.bio?.toLowerCase().includes(query) ||
+      u.location?.toLowerCase().includes(query) ||
+      u.skillsOffered?.some((sk) =>
+        (typeof sk === 'object' ? sk.name : sk).toLowerCase().includes(query)
+      ) ||
+      u.skillsWanted?.some((sk) =>
+        (typeof sk === 'object' ? sk.name : sk).toLowerCase().includes(query)
+      );
 
+    // Category matching
     const matchesCategory =
       selectedCategory === 'All' ||
-      u.skillsOffered.some((sk) => typeof sk === 'object' && sk.category === selectedCategory) ||
-      u.skillsWanted.some((sk) => typeof sk === 'object' && sk.category === selectedCategory);
+      u.skillsOffered?.some(
+        (sk) => typeof sk === 'object' && sk.category === selectedCategory
+      ) ||
+      u.skillsWanted?.some(
+        (sk) => typeof sk === 'object' && sk.category === selectedCategory
+      );
 
-    return matchesSearch && matchesCategory;
+    // Experience matching
+    const matchesExperience =
+      selectedExperience === 'All' || u.experienceLevel === selectedExperience;
+
+    return matchesSearch && matchesCategory && matchesExperience;
   });
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-      
-      {/* Header Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="space-y-6">
+      {/* Header Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-canvas-border">
         <div>
-          <h1 className="text-2xl font-extrabold text-gray-900 flex items-center gap-2">
-            <Compass className="w-7 h-7 text-indigo-600" /> Skill Discovery Catalog
+          <h1 className="font-heading font-bold text-2xl sm:text-3xl text-ink-primary flex items-center gap-2">
+            <Compass className="w-6 h-6 text-brand-teal" />
+            Skill Discovery Directory
           </h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Search, filter, and discover community peers offering skills you wish to learn.
+          <p className="text-xs sm:text-sm text-ink-secondary mt-1">
+            Search, filter, and discover community peers offering skills you want to learn.
           </p>
+        </div>
+
+        {/* View Toggle (Grid vs List) */}
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <div className="flex items-center p-1 bg-canvas-subtle border border-canvas-border rounded-button">
+            <button
+              type="button"
+              onClick={() => setViewMode('grid')}
+              className={`p-1.5 rounded text-xs font-medium transition-colors ${
+                viewMode === 'grid'
+                  ? 'bg-white text-ink-primary shadow-soft'
+                  : 'text-ink-muted hover:text-ink-primary'
+              }`}
+              title="Grid View"
+              aria-label="Grid View"
+            >
+              <LayoutGrid className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('list')}
+              className={`p-1.5 rounded text-xs font-medium transition-colors ${
+                viewMode === 'list'
+                  ? 'bg-white text-ink-primary shadow-soft'
+                  : 'text-ink-muted hover:text-ink-primary'
+              }`}
+              title="List View"
+              aria-label="List View"
+            >
+              <List className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Search & Category Filter Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm space-y-4">
-        <div className="relative">
-          <Search className="w-5 h-5 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search by peer name, skill offered (e.g. React), or skill wanted (e.g. UI/UX)..."
-            className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+      {/* Search & Filter Controls Card */}
+      <div className="bg-canvas-card border border-canvas-border rounded-card p-4 shadow-soft space-y-3.5">
+        <div className="flex flex-col sm:flex-row gap-3">
+          {/* Search Input */}
+          <div className="relative flex-1">
+            <Search className="w-4 h-4 text-ink-muted absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search by peer name, skill offered, or skill wanted..."
+              className="w-full pl-9 pr-8 py-2 text-xs sm:text-sm bg-canvas-subtle/70 border border-canvas-border rounded-input text-ink-primary placeholder-ink-muted focus-ring transition-colors"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink-muted hover:text-ink-primary"
+                aria-label="Clear search"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
+          {/* Experience Filter Selector */}
+          <div className="flex items-center gap-2">
+            <Filter className="w-4 h-4 text-ink-muted hidden sm:block" />
+            <select
+              value={selectedExperience}
+              onChange={(e) => setSelectedExperience(e.target.value)}
+              className="px-3 py-2 text-xs sm:text-sm bg-canvas-subtle/70 border border-canvas-border rounded-input text-ink-primary focus-ring"
             >
-              <X className="w-4 h-4" />
-            </button>
-          )}
+              <option value="All">All Experience Levels</option>
+              <option value="Beginner">Beginner</option>
+              <option value="Intermediate">Intermediate</option>
+              <option value="Advanced">Advanced</option>
+              <option value="Expert">Expert</option>
+            </select>
+          </div>
         </div>
 
-        {/* Category Pills */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+        {/* 12 Category Filter Pills */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none pt-1">
           <button
-            onClick={() => setSelectedCategory('All')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors ${
+            type="button"
+            onClick={() => handleCategorySelect('All')}
+            className={`px-3 py-1 rounded-full text-xs font-heading font-medium whitespace-nowrap transition-colors border select-none ${
               selectedCategory === 'All'
-                ? 'bg-indigo-600 text-white shadow-sm'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                ? 'bg-brand-teal text-white border-transparent'
+                : 'bg-canvas-subtle text-ink-secondary border-canvas-border hover:bg-white'
             }`}
           >
             All Categories
@@ -122,11 +221,12 @@ const SkillDirectoryPage = () => {
           {categories.map((cat) => (
             <button
               key={cat.name}
-              onClick={() => setSelectedCategory(cat.name)}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors ${
+              type="button"
+              onClick={() => handleCategorySelect(cat.name)}
+              className={`px-3 py-1 rounded-full text-xs font-heading font-medium whitespace-nowrap transition-colors border select-none ${
                 selectedCategory === cat.name
-                  ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  ? 'bg-brand-teal text-white border-transparent'
+                  : 'bg-canvas-subtle text-ink-secondary border-canvas-border hover:bg-white'
               }`}
             >
               {cat.name}
@@ -135,208 +235,253 @@ const SkillDirectoryPage = () => {
         </div>
       </div>
 
-      {/* Users Grid */}
+      {/* Users Results */}
       {loading ? (
-        <div className="py-20 text-center">
-          <Loader2 className="w-8 h-8 text-indigo-600 animate-spin mx-auto mb-2" />
-          <p className="text-sm font-medium text-gray-600">Loading skill directory profiles...</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <Skeleton variant="card" count={6} />
         </div>
       ) : filteredUsers.length === 0 ? (
-        <div className="bg-white rounded-3xl p-12 text-center border border-dashed border-gray-200">
-          <Compass className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-          <h3 className="text-lg font-bold text-gray-800">No Peers Found</h3>
-          <p className="text-xs text-gray-500 max-w-sm mx-auto mt-1">
-            Try resetting your search query or selecting a different skill category.
-          </p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredUsers.map((userCard) => (
-            <div
-              key={userCard._id}
-              className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
-            >
-              <div className="space-y-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-600 text-white font-extrabold text-base flex items-center justify-center border-2 border-white shadow-md">
-                      {userCard.name ? userCard.name.slice(0, 2).toUpperCase() : 'US'}
+        <EmptyState
+          title="No peers found matching your criteria"
+          description="Try clearing your search query or selecting a different skill category to find other community members."
+          actionLabel="Reset All Filters"
+          onAction={() => {
+            setSearchQuery('');
+            setSelectedCategory('All');
+            setSelectedExperience('All');
+          }}
+        />
+      ) : viewMode === 'grid' ? (
+        /* GRID VIEW */
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {filteredUsers.map((userCard) => {
+            const offers = userCard.skillsOffered || [];
+            const wants = userCard.skillsWanted || [];
+
+            return (
+              <div
+                key={userCard._id}
+                className="bg-canvas-card border border-canvas-border rounded-card p-5 shadow-soft hover:border-canvas-border-dark transition-all flex flex-col justify-between"
+              >
+                <div>
+                  {/* Top Row: Avatar, Name, Location, Rating */}
+                  <div className="flex items-start justify-between gap-3 mb-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <Avatar
+                        src={userCard.avatar}
+                        name={userCard.name}
+                        id={userCard._id}
+                        size="lg"
+                      />
+                      <div className="min-w-0">
+                        <h3 className="font-heading font-bold text-sm text-ink-primary truncate">
+                          {userCard.name}
+                        </h3>
+                        <div className="flex items-center gap-2 text-[11px] text-ink-muted mt-0.5">
+                          {userCard.location && (
+                            <span className="flex items-center gap-0.5">
+                              <MapPin className="w-3 h-3" />
+                              {userCard.location}
+                            </span>
+                          )}
+                          <span>•</span>
+                          <span className="flex items-center gap-0.5">
+                            <Briefcase className="w-3 h-3" />
+                            {userCard.experienceLevel}
+                          </span>
+                        </div>
+                      </div>
                     </div>
+
+                    <RatingStars
+                      rating={userCard.averageRating || 5.0}
+                      count={userCard.totalReviews || 0}
+                      size="xs"
+                      showScore
+                    />
+                  </div>
+
+                  {/* Bio */}
+                  {userCard.bio && (
+                    <p className="text-xs text-ink-secondary line-clamp-2 leading-relaxed mb-4">
+                      {userCard.bio}
+                    </p>
+                  )}
+
+                  {/* Skills Breakdown */}
+                  <div className="space-y-2.5 pt-3 border-t border-canvas-border/70 text-xs">
+                    {/* Teaches */}
                     <div>
-                      <h3 className="font-bold text-gray-900 text-base leading-snug">{userCard.name}</h3>
-                      <div className="flex items-center gap-2 text-xs text-gray-500 mt-0.5">
-                        <span className="flex items-center gap-1">
-                          <MapPin className="w-3 h-3 text-indigo-500" /> {userCard.location || 'Remote'}
-                        </span>
-                        <span>•</span>
-                        <span className="flex items-center gap-1">
-                          <Briefcase className="w-3 h-3 text-purple-500" /> {userCard.experienceLevel}
-                        </span>
+                      <div className="text-[11px] font-heading font-semibold text-teach-text uppercase tracking-wider mb-1 flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-teach-text" />
+                        Teaches:
+                      </div>
+                      <div className="flex flex-wrap gap-1">
+                        {offers.length > 0 ? (
+                          <>
+                            {offers.slice(0, 3).map((sk, idx) => (
+                              <Pill key={idx} variant="teach" size="xs">
+                                {typeof sk === 'object' ? sk.name : sk}
+                              </Pill>
+                            ))}
+                            {offers.length > 3 && (
+                              <span className="text-[10px] text-ink-muted font-medium self-center pl-1">
+                                +{offers.length - 3} more
+                              </span>
+                            )}
+                          </>
+                        ) : (
+                          <span className="text-xs text-ink-muted italic">None specified</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Wants to Learn */}
+                    <div>
+                      <div className="text-[11px] font-heading font-semibold text-learn-text uppercase tracking-wider mb-1 flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-learn-text" />
+                        Wants to learn:
+                      </div>
+                      <div className="flex flex-wrap gap-1">
+                        {wants.length > 0 ? (
+                          <>
+                            {wants.slice(0, 3).map((sk, idx) => (
+                              <Pill key={idx} variant="learn" size="xs">
+                                {typeof sk === 'object' ? sk.name : sk}
+                              </Pill>
+                            ))}
+                            {wants.length > 3 && (
+                              <span className="text-[10px] text-ink-muted font-medium self-center pl-1">
+                                +{wants.length - 3} more
+                              </span>
+                            )}
+                          </>
+                        ) : (
+                          <span className="text-xs text-ink-muted italic">None specified</span>
+                        )}
                       </div>
                     </div>
                   </div>
-
-                  <span className="flex items-center gap-1 text-xs font-bold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-lg">
-                    <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                    {userCard.averageRating ? userCard.averageRating.toFixed(1) : '5.0'}
-                  </span>
                 </div>
 
-                <p className="text-xs text-gray-600 line-clamp-2 leading-relaxed">
-                  {userCard.bio || 'Ready for peer skill exchange.'}
-                </p>
-
-                <div className="space-y-1.5">
-                  <span className="text-[11px] font-bold text-indigo-700 uppercase tracking-wider flex items-center gap-1">
-                    <BookOpen className="w-3.5 h-3.5" /> Offers to Teach
-                  </span>
-                  <div className="flex flex-wrap gap-1.5">
-                    {userCard.skillsOffered?.length ? (
-                      userCard.skillsOffered.map((sk, idx) => (
-                        <span
-                          key={idx}
-                          className="px-2.5 py-0.5 bg-indigo-50 text-indigo-700 rounded-md text-xs font-medium border border-indigo-100"
-                        >
-                          {typeof sk === 'object' ? sk.name : sk}
-                        </span>
-                      ))
-                    ) : (
-                      <span className="text-xs text-gray-400 italic">None listed</span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <span className="text-[11px] font-bold text-purple-700 uppercase tracking-wider flex items-center gap-1">
-                    <Sparkles className="w-3.5 h-3.5" /> Wants to Learn
-                  </span>
-                  <div className="flex flex-wrap gap-1.5">
-                    {userCard.skillsWanted?.length ? (
-                      userCard.skillsWanted.map((sk, idx) => (
-                        <span
-                          key={idx}
-                          className="px-2.5 py-0.5 bg-purple-50 text-purple-700 rounded-md text-xs font-medium border border-purple-100"
-                        >
-                          {typeof sk === 'object' ? sk.name : sk}
-                        </span>
-                      ))
-                    ) : (
-                      <span className="text-xs text-gray-400 italic">None listed</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div className="pt-5 mt-4 border-t border-gray-100 flex items-center justify-between">
-                <button
-                  onClick={() => setSelectedUserModal(userCard)}
-                  className="text-xs font-semibold text-gray-600 hover:text-indigo-600"
-                >
-                  View Profile
-                </button>
-                {isAuthenticated && (
-                  <button
-                    onClick={() => setExchangePartnerModal(userCard)}
-                    className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold shadow-sm flex items-center gap-1.5 transition-colors"
+                {/* Card Actions */}
+                <div className="flex items-center gap-2 pt-4 mt-4 border-t border-canvas-border">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => navigate(`/profile/${userCard._id}`)}
+                    className="flex-1"
                   >
-                    <Send className="w-3.5 h-3.5" /> Send Request
-                  </button>
-                )}
+                    View Profile
+                  </Button>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => setExchangePartnerModal(userCard)}
+                    className="flex-1"
+                  >
+                    Propose Swap
+                  </Button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
-      )}
+      ) : (
+        /* LIST VIEW */
+        <div className="space-y-3">
+          {filteredUsers.map((userCard) => {
+            const offers = userCard.skillsOffered || [];
+            const wants = userCard.skillsWanted || [];
 
-      {/* User Profile View Modal */}
-      {selectedUserModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-5 border border-gray-100 relative">
-            <button
-              onClick={() => setSelectedUserModal(null)}
-              className="absolute top-5 right-5 p-1 text-gray-400 hover:text-gray-600 rounded-lg"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-full bg-indigo-600 text-white font-extrabold text-xl flex items-center justify-center border-2 border-white shadow-md">
-                {selectedUserModal.name.slice(0, 2).toUpperCase()}
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-gray-900">{selectedUserModal.name}</h3>
-                <p className="text-xs text-gray-500">{selectedUserModal.location} • {selectedUserModal.experienceLevel}</p>
-                <div className="flex items-center gap-1 text-xs font-bold text-amber-600 mt-1">
-                  <Star className="w-3.5 h-3.5 fill-amber-400" />
-                  {selectedUserModal.averageRating?.toFixed(1) || '5.0'} ({selectedUserModal.totalReviews || 0} reviews)
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-gray-50 p-4 rounded-xl text-xs text-gray-700 leading-relaxed">
-              <p className="font-semibold text-gray-900 mb-1">Bio:</p>
-              {selectedUserModal.bio || 'No bio provided.'}
-            </div>
-
-            <div className="space-y-3">
-              <div>
-                <p className="text-xs font-bold text-indigo-700 uppercase">Offers to Teach:</p>
-                <div className="flex flex-wrap gap-1.5 mt-1">
-                  {selectedUserModal.skillsOffered?.map((sk, idx) => (
-                    <span key={idx} className="px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-md text-xs font-semibold">
-                      {typeof sk === 'object' ? sk.name : sk}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <p className="text-xs font-bold text-purple-700 uppercase">Wants to Learn:</p>
-                <div className="flex flex-wrap gap-1.5 mt-1">
-                  {selectedUserModal.skillsWanted?.map((sk, idx) => (
-                    <span key={idx} className="px-2.5 py-1 bg-purple-50 text-purple-700 rounded-md text-xs font-semibold">
-                      {typeof sk === 'object' ? sk.name : sk}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-3 flex justify-end gap-2">
-              <button
-                onClick={() => setSelectedUserModal(null)}
-                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-xl text-xs font-semibold"
+            return (
+              <div
+                key={userCard._id}
+                className="bg-canvas-card border border-canvas-border rounded-card p-4 shadow-soft hover:border-canvas-border-dark transition-all flex flex-col md:flex-row md:items-center justify-between gap-4"
               >
-                Close
-              </button>
-              {isAuthenticated && (
-                <button
-                  onClick={() => {
-                    const p = selectedUserModal;
-                    setSelectedUserModal(null);
-                    setExchangePartnerModal(p);
-                  }}
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-semibold shadow-sm flex items-center gap-1"
-                >
-                  <Send className="w-3.5 h-3.5" /> Exchange Skills
-                </button>
-              )}
-            </div>
-          </div>
+                <div className="flex items-start md:items-center gap-3.5 min-w-0 flex-1">
+                  <Avatar
+                    src={userCard.avatar}
+                    name={userCard.name}
+                    id={userCard._id}
+                    size="md"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="font-heading font-bold text-sm text-ink-primary truncate">
+                        {userCard.name}
+                      </h3>
+                      <span className="text-[11px] text-ink-muted">
+                        {userCard.location || 'Remote'}
+                      </span>
+                      <span>•</span>
+                      <RatingStars
+                        rating={userCard.averageRating || 5.0}
+                        count={userCard.totalReviews || 0}
+                        size="xs"
+                        showScore
+                      />
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-3 mt-1.5 text-xs">
+                      <div className="flex items-center gap-1">
+                        <span className="text-teach-text font-semibold text-[11px]">Teaches:</span>
+                        <div className="flex flex-wrap gap-1">
+                          {offers.slice(0, 3).map((sk, idx) => (
+                            <Pill key={idx} variant="teach" size="xs">
+                              {typeof sk === 'object' ? sk.name : sk}
+                            </Pill>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1">
+                        <span className="text-learn-text font-semibold text-[11px]">Wants:</span>
+                        <div className="flex flex-wrap gap-1">
+                          {wants.slice(0, 3).map((sk, idx) => (
+                            <Pill key={idx} variant="learn" size="xs">
+                              {typeof sk === 'object' ? sk.name : sk}
+                            </Pill>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 self-end md:self-center flex-shrink-0">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => navigate(`/profile/${userCard._id}`)}
+                  >
+                    Profile
+                  </Button>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => setExchangePartnerModal(userCard)}
+                  >
+                    Propose Swap
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
 
-      {/* Send Exchange Modal */}
+      {/* Propose Swap Modal */}
       {exchangePartnerModal && (
         <SendExchangeModal
-          partner={exchangePartnerModal}
+          isOpen={Boolean(exchangePartnerModal)}
           onClose={() => setExchangePartnerModal(null)}
-          onSuccess={() => fetchDirectoryData()}
+          partnerUser={exchangePartnerModal}
+          onSuccess={() => {
+            setExchangePartnerModal(null);
+          }}
         />
       )}
-
     </div>
   );
-};
-
-export default SkillDirectoryPage;
+}

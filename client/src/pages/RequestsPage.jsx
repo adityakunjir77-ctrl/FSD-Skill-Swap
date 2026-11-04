@@ -1,32 +1,38 @@
 import React, { useState, useEffect } from 'react';
 import { getUserExchanges, updateExchangeStatus } from '../services/exchangeService';
 import { useAuth } from '../context/AuthContext';
-import { useNotification } from '../context/NotificationContext';
-import { Link, useNavigate } from 'react-router-dom';
+import { useToast } from '../components/ui/Toast';
+import { useNavigate } from 'react-router-dom';
 import ScheduleSessionModal from '../components/ScheduleSessionModal';
 import ReviewModal from '../components/ReviewModal';
-import { 
-  Send, 
-  CheckCircle2, 
-  XCircle, 
-  Clock, 
-  MessageSquare, 
-  Calendar, 
-  ArrowRightLeft, 
-  CheckCircle, 
-  Loader2,
-  User,
-  Star
+import Avatar from '../components/ui/Avatar';
+import Button from '../components/ui/Button';
+import Pill from '../components/ui/Pill';
+import Tabs from '../components/ui/Tabs';
+import Skeleton from '../components/ui/Skeleton';
+import EmptyState from '../components/ui/EmptyState';
+import ExchangeProgress from '../components/ui/ExchangeProgress';
+import {
+  Send,
+  Check,
+  X,
+  MessageSquare,
+  Calendar,
+  CheckCircle2,
+  Clock,
+  Star,
+  ArrowRightLeft,
+  Quote,
 } from 'lucide-react';
 
-const RequestsPage = () => {
+export default function RequestsPage() {
   const { user: currentUser } = useAuth();
-  const { showNotification } = useNotification();
+  const { success, error } = useToast();
   const navigate = useNavigate();
 
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('received'); // 'received' | 'sent' | 'accepted' | 'completed'
+  const [activeTab, setActiveTab] = useState('received'); // 'received' | 'sent' | 'active' | 'completed' | 'all'
 
   // Modals
   const [schedulingExchange, setSchedulingExchange] = useState(null);
@@ -44,7 +50,7 @@ const RequestsPage = () => {
         setRequests(res.data.all || []);
       }
     } catch (err) {
-      showNotification('Failed to fetch exchange requests', 'error');
+      error('Failed to load exchange requests');
     } finally {
       setLoading(false);
     }
@@ -54,13 +60,25 @@ const RequestsPage = () => {
     try {
       const res = await updateExchangeStatus(exchangeId, newStatus);
       if (res.success) {
-        showNotification(`Exchange request marked as ${newStatus}!`, 'success');
+        success(`Exchange marked as ${newStatus}!`);
         fetchRequests();
       }
     } catch (err) {
-      showNotification(err.response?.data?.message || 'Failed to update request status', 'error');
+      error(err.response?.data?.message || 'Failed to update request');
     }
   };
+
+  // Counts for tabs
+  const receivedPending = requests.filter(
+    (r) => r.receiver?._id === currentUser?._id && r.status === 'Pending'
+  );
+  const sentPending = requests.filter(
+    (r) => r.sender?._id === currentUser?._id && r.status === 'Pending'
+  );
+  const activeExchanges = requests.filter(
+    (r) => r.status === 'Accepted' || r.status === 'In Progress'
+  );
+  const completedExchanges = requests.filter((r) => r.status === 'Completed');
 
   const filteredRequests = requests.filter((r) => {
     const isReceiver = r.receiver?._id === currentUser?._id;
@@ -68,207 +86,263 @@ const RequestsPage = () => {
 
     if (activeTab === 'received') return isReceiver && r.status === 'Pending';
     if (activeTab === 'sent') return isSender && r.status === 'Pending';
-    if (activeTab === 'accepted') return (r.status === 'Accepted' || r.status === 'In Progress') && (isReceiver || isSender);
+    if (activeTab === 'active') {
+      return (r.status === 'Accepted' || r.status === 'In Progress') && (isReceiver || isSender);
+    }
     if (activeTab === 'completed') return r.status === 'Completed' && (isReceiver || isSender);
-    return true;
+    return true; // 'all'
   });
 
+  const tabItems = [
+    { id: 'received', label: 'Received Inbox', count: receivedPending.length },
+    { id: 'sent', label: 'Sent Requests', count: sentPending.length },
+    { id: 'active', label: 'Active Swaps', count: activeExchanges.length },
+    { id: 'completed', label: 'Completed', count: completedExchanges.length },
+    { id: 'all', label: 'All History', count: requests.length },
+  ];
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-      
-      {/* Page Title */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-extrabold text-gray-900 flex items-center gap-2">
-            <Send className="w-7 h-7 text-indigo-600" /> Exchange Requests & Workflow
-          </h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Manage pending proposals, accept incoming peer requests, and complete active skill exchanges.
-          </p>
-        </div>
+    <div className="space-y-6">
+      {/* Page Header */}
+      <div className="pb-4 border-b border-canvas-border">
+        <h1 className="font-heading font-bold text-2xl sm:text-3xl text-ink-primary flex items-center gap-2">
+          <Send className="w-6 h-6 text-brand-teal" />
+          Exchange Requests & Lifecycles
+        </h1>
+        <p className="text-xs sm:text-sm text-ink-secondary mt-1">
+          Review incoming proposals, accept swaps, book study sessions, and finalize completed exchanges.
+        </p>
       </div>
 
-      {/* Tabs Bar */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 bg-white p-2 rounded-2xl border border-gray-100 shadow-sm">
-        {[
-          { key: 'received', label: 'Received Requests', icon: Clock },
-          { key: 'sent', label: 'Sent Proposals', icon: Send },
-          { key: 'accepted', label: 'Active / Accepted', icon: CheckCircle2 },
-          { key: 'completed', label: 'Completed Exchanges', icon: CheckCircle },
-        ].map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.key;
-          return (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
-                isActive
-                  ? 'bg-indigo-600 text-white shadow-md'
-                  : 'text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              <Icon className="w-4 h-4" />
-              <span>{tab.label}</span>
-            </button>
-          );
-        })}
-      </div>
+      {/* Tabs */}
+      <Tabs
+        tabs={tabItems}
+        activeTab={activeTab}
+        onChange={(tabId) => setActiveTab(tabId)}
+      />
 
-      {/* Requests Grid */}
+      {/* Requests Content */}
       {loading ? (
-        <div className="py-20 text-center">
-          <Loader2 className="w-8 h-8 text-indigo-600 animate-spin mx-auto mb-2" />
-          <p className="text-sm font-medium text-gray-600">Loading your skill exchange requests...</p>
+        <div className="space-y-4">
+          <Skeleton variant="card" count={3} />
         </div>
       ) : filteredRequests.length === 0 ? (
-        <div className="bg-white rounded-3xl p-12 text-center border border-dashed border-gray-200">
-          <Send className="w-12 h-12 text-indigo-400 mx-auto mb-3" />
-          <h3 className="text-lg font-bold text-gray-800">No Requests Found</h3>
-          <p className="text-xs text-gray-500 max-w-sm mx-auto mt-1 leading-relaxed">
-            {activeTab === 'received' && 'You have no pending incoming exchange requests.'}
-            {activeTab === 'sent' && 'You have not sent any pending exchange requests.'}
-            {activeTab === 'accepted' && 'No active or accepted skill exchanges at the moment.'}
-            {activeTab === 'completed' && 'No completed skill exchanges logged yet.'}
-          </p>
-        </div>
+        <EmptyState
+          title={`No ${activeTab} exchange requests`}
+          description={
+            activeTab === 'received'
+              ? 'You have no pending requests waiting for your reply.'
+              : activeTab === 'sent'
+              ? 'You have not sent any pending exchange proposals.'
+              : activeTab === 'active'
+              ? 'No active skill exchanges in progress right now.'
+              : activeTab === 'completed'
+              ? 'No completed skill exchanges logged yet.'
+              : 'No exchange requests in your history yet.'
+          }
+          actionLabel="Find Peers to Swap With"
+          onAction={() => navigate('/matches')}
+        />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {filteredRequests.map((item) => {
-            const isReceiver = item.receiver?._id === currentUser?._id;
-            const partner = isReceiver ? item.sender : item.receiver;
+        <div className="space-y-4">
+          {filteredRequests.map((req) => {
+            const isReceiver = req.receiver?._id === currentUser?._id;
+            const partner = isReceiver ? req.sender : req.receiver;
+
+            // What they offer vs what they want
+            const offerText = req.offeredSkill;
+            const wantText = req.wantedSkill;
 
             return (
               <div
-                key={item._id}
-                className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-all space-y-5 flex flex-col justify-between"
+                key={req._id}
+                className="bg-canvas-card border border-canvas-border rounded-card p-5 shadow-soft hover:border-canvas-border-dark transition-all space-y-4"
               >
-                <div className="space-y-4">
-                  {/* Status Pill & Role Badge */}
-                  <div className="flex items-center justify-between">
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-bold ${
-                        item.status === 'Pending'
-                          ? 'bg-amber-100 text-amber-800 border border-amber-200'
-                          : item.status === 'Accepted' || item.status === 'In Progress'
-                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                          : item.status === 'Completed'
-                          ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
-                          : 'bg-rose-100 text-rose-800 border border-rose-200'
-                      }`}
-                    >
-                      Status: {item.status}
-                    </span>
-
-                    <span className="text-xs text-gray-400 font-medium">
-                      {isReceiver ? 'Received Proposal' : 'Sent Proposal'}
-                    </span>
-                  </div>
-
-                  {/* Partner Header */}
+                {/* Header: Avatars & Summary */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  {/* Both Avatars with Two-way motif */}
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-600 text-white font-extrabold text-base flex items-center justify-center border-2 border-white shadow-md">
-                      {partner?.name ? partner.name.slice(0, 2).toUpperCase() : 'US'}
+                    <Avatar
+                      src={req.sender?.avatar}
+                      name={req.sender?.name}
+                      id={req.sender?._id}
+                      size="md"
+                    />
+                    <div className="w-6 h-6 rounded-full bg-canvas-subtle border border-canvas-border flex items-center justify-center text-brand-teal flex-shrink-0">
+                      <ArrowRightLeft className="w-3 h-3" />
                     </div>
-                    <div>
-                      <h3 className="font-bold text-gray-900 text-base">{partner?.name}</h3>
-                      <p className="text-xs text-gray-500">{partner?.location || 'Remote'}</p>
+                    <Avatar
+                      src={req.receiver?.avatar}
+                      name={req.receiver?.name}
+                      id={req.receiver?._id}
+                      size="md"
+                    />
+
+                    <div className="min-w-0 ml-1">
+                      <h3 className="font-heading font-bold text-sm text-ink-primary">
+                        {isReceiver ? req.sender?.name : 'You'}{' '}
+                        <span className="font-normal text-ink-secondary">
+                          offered to teach{' '}
+                          <span className="font-semibold text-teach-text">
+                            {offerText}
+                          </span>{' '}
+                          for{' '}
+                          <span className="font-semibold text-learn-text">
+                            {wantText}
+                          </span>
+                        </span>
+                      </h3>
+                      <div className="text-[11px] text-ink-muted mt-0.5">
+                        {new Date(req.createdAt).toLocaleDateString([], {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                        })}{' '}
+                        • {isReceiver ? 'Incoming request' : 'Sent by you'}
+                      </div>
                     </div>
                   </div>
 
-                  {/* Skills Exchange Box */}
-                  <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 grid grid-cols-2 gap-3">
-                    <div>
-                      <span className="text-[11px] font-bold text-indigo-700 uppercase tracking-wider block mb-1">
-                        Offered Skill:
-                      </span>
-                      <span className="px-2.5 py-1 bg-indigo-100 text-indigo-800 rounded-lg text-xs font-bold inline-block">
-                        {item.offeredSkill}
-                      </span>
-                    </div>
-
-                    <div>
-                      <span className="text-[11px] font-bold text-purple-700 uppercase tracking-wider block mb-1">
-                        Wanted Skill:
-                      </span>
-                      <span className="px-2.5 py-1 bg-purple-100 text-purple-800 rounded-lg text-xs font-bold inline-block">
-                        {item.wantedSkill}
-                      </span>
-                    </div>
+                  {/* Status Indicator */}
+                  <div className="self-start sm:self-auto">
+                    <Pill
+                      variant={
+                        req.status === 'Pending'
+                          ? 'warning'
+                          : req.status === 'Accepted' || req.status === 'In Progress'
+                          ? 'success'
+                          : req.status === 'Completed'
+                          ? 'teach'
+                          : 'danger'
+                      }
+                      size="sm"
+                    >
+                      {req.status}
+                    </Pill>
                   </div>
-
-                  {item.message && (
-                    <p className="text-xs text-gray-600 bg-white p-3 rounded-xl border border-gray-100 italic">
-                      "{item.message}"
-                    </p>
-                  )}
                 </div>
 
-                {/* Card Actions */}
-                <div className="pt-4 border-t border-gray-100 flex flex-wrap items-center justify-end gap-2">
-                  {/* Actions for Pending Received */}
-                  {isReceiver && item.status === 'Pending' && (
-                    <>
-                      <button
-                        onClick={() => handleStatusChange(item._id, 'Rejected')}
-                        className="px-3.5 py-2 rounded-xl border border-rose-200 text-rose-600 hover:bg-rose-50 text-xs font-bold transition-colors"
-                      >
-                        Decline
-                      </button>
-                      <button
-                        onClick={() => handleStatusChange(item._id, 'Accepted')}
-                        className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-100 transition-colors"
-                      >
-                        Accept Exchange
-                      </button>
-                    </>
-                  )}
+                {/* Personal Intro Message Quote */}
+                {req.message && (
+                  <div className="p-3 bg-canvas-subtle/80 border-l-2 border-brand-teal rounded-r-button text-xs text-ink-secondary italic flex items-start gap-2">
+                    <Quote className="w-3.5 h-3.5 text-brand-teal flex-shrink-0 mt-0.5 not-italic" />
+                    <span>"{req.message}"</span>
+                  </div>
+                )}
 
-                  {/* Actions for Pending Sent */}
-                  {!isReceiver && item.status === 'Pending' && (
-                    <button
-                      onClick={() => handleStatusChange(item._id, 'Cancelled')}
-                      className="px-3.5 py-2 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-100 text-xs font-semibold"
+                {/* ExchangeProgress 4-Dot Stepper */}
+                <div className="pt-2">
+                  <ExchangeProgress status={req.status} />
+                </div>
+
+                {/* State-Based Action Buttons */}
+                <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-canvas-border">
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => navigate(`/profile/${partner?._id}`)}
                     >
-                      Cancel Request
-                    </button>
-                  )}
+                      View {partner?.name?.split(' ')[0]}'s Profile
+                    </Button>
+                  </div>
 
-                  {/* Actions for Accepted / In Progress */}
-                  {(item.status === 'Accepted' || item.status === 'In Progress') && (
-                    <>
-                      <Link
-                        to="/messages"
-                        className="px-3.5 py-2 rounded-xl bg-indigo-50 text-indigo-700 hover:bg-indigo-100 text-xs font-bold flex items-center gap-1 transition-colors"
+                  <div className="flex items-center gap-2">
+                    {/* For Receiver when Pending: Accept / Decline */}
+                    {isReceiver && req.status === 'Pending' && (
+                      <>
+                        <Button
+                          variant="danger-ghost"
+                          size="sm"
+                          icon={X}
+                          onClick={() => handleStatusChange(req._id, 'Rejected')}
+                        >
+                          Decline
+                        </Button>
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          icon={Check}
+                          onClick={() => handleStatusChange(req._id, 'Accepted')}
+                        >
+                          Accept Swap
+                        </Button>
+                      </>
+                    )}
+
+                    {/* For Sender when Pending: Cancel Option */}
+                    {!isReceiver && req.status === 'Pending' && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleStatusChange(req._id, 'Cancelled')}
                       >
-                        <MessageSquare className="w-3.5 h-3.5" /> Chat
-                      </Link>
+                        Cancel Request
+                      </Button>
+                    )}
 
-                      <button
-                        onClick={() => setSchedulingExchange(item)}
-                        className="px-3.5 py-2 rounded-xl bg-purple-50 text-purple-700 hover:bg-purple-100 text-xs font-bold flex items-center gap-1 transition-colors"
-                      >
-                        <Calendar className="w-3.5 h-3.5" /> Schedule Session
-                      </button>
+                    {/* When Accepted or In Progress: Schedule, Chat, Mark Completed */}
+                    {(req.status === 'Accepted' || req.status === 'In Progress') && (
+                      <>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          icon={Calendar}
+                          onClick={() => setSchedulingExchange(req)}
+                        >
+                          Schedule Session
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          icon={MessageSquare}
+                          onClick={() => navigate('/messages')}
+                        >
+                          Open Chat
+                        </Button>
+                        {req.status === 'Accepted' ? (
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            onClick={() => handleStatusChange(req._id, 'In Progress')}
+                          >
+                            Mark In Progress
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            icon={CheckCircle2}
+                            onClick={() => handleStatusChange(req._id, 'Completed')}
+                          >
+                            Mark Completed
+                          </Button>
+                        )}
+                      </>
+                    )}
 
-                      <button
-                        onClick={() => handleStatusChange(item._id, 'Completed')}
-                        className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md shadow-emerald-100 flex items-center gap-1 transition-colors"
-                      >
-                        <CheckCircle className="w-3.5 h-3.5" /> Mark Completed
-                      </button>
-                    </>
-                  )}
-
-                  {/* Actions for Completed Exchange */}
-                  {item.status === 'Completed' && (
-                    <button
-                      onClick={() => setReviewingExchange(item)}
-                      className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold shadow-md shadow-amber-100 flex items-center gap-1 transition-colors"
-                    >
-                      <Star className="w-3.5 h-3.5" /> Rate & Review Partner
-                    </button>
-                  )}
+                    {/* When Completed: Leave Review */}
+                    {req.status === 'Completed' && (
+                      <>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          icon={MessageSquare}
+                          onClick={() => navigate('/messages')}
+                        >
+                          Chat History
+                        </Button>
+                        <Button
+                          variant="coral"
+                          size="sm"
+                          icon={Star}
+                          onClick={() => setReviewingExchange(req)}
+                        >
+                          Leave Review
+                        </Button>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
             );
@@ -279,11 +353,12 @@ const RequestsPage = () => {
       {/* Schedule Session Modal */}
       {schedulingExchange && (
         <ScheduleSessionModal
-          exchange={schedulingExchange}
+          isOpen={Boolean(schedulingExchange)}
           onClose={() => setSchedulingExchange(null)}
+          exchange={schedulingExchange}
           onSuccess={() => {
+            setSchedulingExchange(null);
             fetchRequests();
-            navigate('/sessions');
           }}
         />
       )}
@@ -291,14 +366,15 @@ const RequestsPage = () => {
       {/* Review Modal */}
       {reviewingExchange && (
         <ReviewModal
-          exchange={reviewingExchange}
+          isOpen={Boolean(reviewingExchange)}
           onClose={() => setReviewingExchange(null)}
-          onSuccess={() => fetchRequests()}
+          exchange={reviewingExchange}
+          onSuccess={() => {
+            setReviewingExchange(null);
+            fetchRequests();
+          }}
         />
       )}
-
     </div>
   );
-};
-
-export default RequestsPage;
+}

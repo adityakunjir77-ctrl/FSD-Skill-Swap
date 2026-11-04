@@ -1,113 +1,246 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Sparkles, ShieldCheck, Users, RefreshCw, Star, CheckCircle, Code, Palette, Languages, Camera } from 'lucide-react';
+import API from '../services/api';
+import Button from '../components/ui/Button';
+import Pill from '../components/ui/Pill';
+import SwapCard from '../components/ui/SwapCard';
+import {
+  ArrowRight,
+  Sparkles,
+  Users,
+  Compass,
+  ArrowRightLeft,
+  Calendar,
+  Star,
+  CheckCircle2,
+} from 'lucide-react';
 
-const LandingPage = () => {
+const STATIC_CATEGORIES = [
+  { name: 'Programming', count: 18 },
+  { name: 'UI/UX Design', count: 12 },
+  { name: 'Languages', count: 15 },
+  { name: 'Web Development', count: 24 },
+  { name: 'Machine Learning', count: 9 },
+  { name: 'Photography', count: 7 },
+  { name: 'Graphic Design', count: 11 },
+  { name: 'Music', count: 6 },
+  { name: 'Public Speaking', count: 8 },
+  { name: 'Mobile Development', count: 10 },
+  { name: 'Video Editing', count: 8 },
+  { name: 'Business', count: 7 },
+];
+
+export default function LandingPage() {
+  const [categories, setCategories] = useState(STATIC_CATEGORIES);
+
+  useEffect(() => {
+    API.get('/skills/categories')
+      .then((res) => {
+        if (res.data?.data && res.data.data.length > 0) {
+          setCategories(res.data.data);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  // Demo users for the Hero SwapCard
+  const alexUser = {
+    _id: 'demo-alex',
+    name: 'Alex Morgan',
+    headline: 'Frontend Engineer',
+    bio: 'Experienced React developer passionate about functional UI components and state machines.',
+    experienceLevel: 'Advanced',
+    location: 'Remote',
+    averageRating: 4.9,
+    totalReviews: 8,
+    skillsOffered: ['React', 'Node.js'],
+  };
+
+  const priyaUser = {
+    _id: 'demo-priya',
+    name: 'Priya Patel',
+    headline: 'AI Researcher',
+    bio: 'Specialist in Python, ML workflows, and LLM prompt engineering. Looking to level up frontend skills.',
+    experienceLevel: 'Expert',
+    location: 'Remote',
+    averageRating: 5.0,
+    totalReviews: 12,
+    skillsOffered: ['Python', 'Machine Learning'],
+  };
+
   return (
-    <div className="bg-slate-900 text-slate-100 min-h-screen">
-      
-      {/* HERO SECTION */}
-      <section className="relative overflow-hidden pt-20 pb-28 md:pt-32 md:pb-40">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-gradient-to-tr from-indigo-600/30 to-purple-600/20 rounded-full blur-[120px] pointer-events-none"></div>
+    <div className="bg-canvas text-ink-primary overflow-hidden">
+      {/* 1. SPLIT HERO SECTION */}
+      <section className="relative pt-12 pb-20 md:pt-20 md:pb-28 border-b border-canvas-border bg-gradient-to-b from-brand-teal-surface/30 to-canvas">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+            {/* Left Column: Headlines & CTAs */}
+            <div className="lg:col-span-6 space-y-6 text-left">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teach-bg text-teach-text border border-teach-border text-xs font-heading font-semibold">
+                <Sparkles className="w-3.5 h-3.5 text-brand-teal" />
+                <span>Non-monetary reciprocal learning</span>
+              </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-semibold uppercase tracking-wider mb-6">
-            <Sparkles className="w-4 h-4 text-indigo-400" />
-            Empowering Reciprocal Learning Without Money
-          </div>
-          
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold tracking-tight text-white mb-6 max-w-4xl mx-auto leading-tight">
-            Learn. Teach. Exchange. <br />
-            <span className="bg-gradient-to-r from-indigo-400 via-purple-300 to-pink-400 bg-clip-text text-transparent">
-              No Money Required.
-            </span>
-          </h1>
+              <h1 className="font-heading font-extrabold text-4xl sm:text-5xl lg:text-6xl text-ink-primary tracking-tight leading-[1.12]">
+                Teach one thing. <br />
+                <span className="text-brand-teal">Learn another.</span>
+              </h1>
 
-          <p className="text-lg md:text-xl text-slate-300 max-w-2xl mx-auto mb-10 leading-relaxed font-light">
-            Share what you master. Learn what you desire. SkillSwap intelligently matches complementary skills to pair you with community mentors for direct peer-to-peer exchanges.
-          </p>
+              <p className="text-base sm:text-lg text-ink-secondary max-w-xl leading-relaxed">
+                SkillSwap pairs you with peers for direct 1-on-1 knowledge exchange. Master a new discipline by sharing what you already know best — 100% free.
+              </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link
-              to="/register"
-              className="w-full sm:w-auto px-8 py-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-base shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 transition-all transform hover:-translate-y-0.5"
-            >
-              Start Skill Exchange Now <ArrowRight className="w-5 h-5" />
-            </Link>
-            <Link
-              to="/discover"
-              className="w-full sm:w-auto px-8 py-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-base border border-slate-700 flex items-center justify-center transition-all"
-            >
-              Explore Skill Directory
-            </Link>
-          </div>
+              <div className="flex flex-wrap items-center gap-3 pt-2">
+                <Link to="/register">
+                  <Button
+                    variant="coral"
+                    size="lg"
+                    icon={ArrowRight}
+                    iconPosition="right"
+                  >
+                    Get Started Free
+                  </Button>
+                </Link>
 
-          {/* Key Metrics Pill */}
-          <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-6 max-w-3xl mx-auto pt-8 border-t border-slate-800 text-left">
-            <div>
-              <div className="text-2xl font-bold text-white">100%</div>
-              <div className="text-xs text-slate-400">Non-Monetary Trade</div>
+                <Link to="/discover">
+                  <Button variant="secondary" size="lg" icon={Compass}>
+                    Browse Skills
+                  </Button>
+                </Link>
+              </div>
+
+              {/* Trust signals */}
+              <div className="pt-4 flex items-center gap-6 text-xs text-ink-secondary">
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-brand-teal" />
+                  <span>No credit card needed</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-brand-teal" />
+                  <span>Verified peer reviews</span>
+                </div>
+              </div>
             </div>
-            <div>
-              <div className="text-2xl font-bold text-white">Algorithmic</div>
-              <div className="text-xs text-slate-400">Match Compatibility</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-white">Real-Time</div>
-              <div className="text-xs text-slate-400">Socket.io Messaging</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-white">Verified</div>
-              <div className="text-xs text-slate-400">Peer Reviews</div>
+
+            {/* Right Column: Live Interactive SwapCard Preview */}
+            <div className="lg:col-span-6 flex justify-center">
+              <div className="w-full max-w-md relative">
+                {/* Visual accent backdrop */}
+                <div className="absolute -inset-1.5 rounded-card bg-brand-teal/10 -z-10 rotate-1 transform" />
+
+                <SwapCard
+                  currentUser={alexUser}
+                  partnerUser={priyaUser}
+                  compatibilityScore={100}
+                  isReciprocal={true}
+                  isBestMatch={true}
+                  youCanTeach={['React', 'Node.js']}
+                  theyCanTeach={['Python', 'Machine Learning']}
+                  onProposeSwap={() => {}}
+                  onViewProfile={() => {}}
+                />
+
+                <div className="mt-3 text-center text-xs text-ink-muted">
+                  Live preview: 100% reciprocal match between complementary skills
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* HOW IT WORKS */}
-      <section className="py-20 bg-slate-950 border-y border-slate-800/80">
+      {/* 2. QUIET STATS STRIP */}
+      <section className="py-8 bg-white border-b border-canvas-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-16">
-            <h2 className="text-3xl font-bold text-white mb-4">How SkillSwap Works</h2>
-            <p className="text-slate-400 text-base">A transparent, step-by-step workflow designed for peer collaboration.</p>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+            <div>
+              <div className="font-heading font-bold text-2xl sm:text-3xl text-ink-primary">
+                100%
+              </div>
+              <div className="text-xs text-ink-muted mt-0.5">Non-Monetary Trade</div>
+            </div>
+            <div>
+              <div className="font-heading font-bold text-2xl sm:text-3xl text-brand-teal">
+                1-on-1
+              </div>
+              <div className="text-xs text-ink-muted mt-0.5">Direct Peer Sessions</div>
+            </div>
+            <div>
+              <div className="font-heading font-bold text-2xl sm:text-3xl text-brand-coral">
+                Socket.io
+              </div>
+              <div className="text-xs text-ink-muted mt-0.5">Real-Time Chat & Alerts</div>
+            </div>
+            <div>
+              <div className="font-heading font-bold text-2xl sm:text-3xl text-ink-primary">
+                Verified
+              </div>
+              <div className="text-xs text-ink-muted mt-0.5">Community Reputation</div>
+            </div>
           </div>
+        </div>
+      </section>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+      {/* 3. HOW IT WORKS: Horizontal 4-step path connected by a dotted line */}
+      <section className="py-16 sm:py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center max-w-2xl mx-auto mb-16">
+          <h2 className="font-heading font-bold text-2xl sm:text-3xl text-ink-primary">
+            How SkillSwap Works
+          </h2>
+          <p className="text-sm text-ink-secondary mt-2">
+            A clear, four-step path designed for reciprocal collaboration.
+          </p>
+        </div>
+
+        <div className="relative">
+          {/* Connecting Dotted Line on Desktop */}
+          <div className="hidden lg:block absolute top-8 left-16 right-16 h-0.5 border-t-2 border-dashed border-canvas-border -z-0" />
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 relative z-10">
             {[
               {
                 step: '01',
-                title: 'Build Profile',
-                desc: 'List skills you master (e.g. React, UI Design) and skills you wish to learn.',
+                title: 'Create Profile',
+                desc: 'List the skills you have mastered and the skills you are eager to learn.',
                 icon: Users,
               },
               {
                 step: '02',
                 title: 'Get Matched',
-                desc: 'Our compatibility engine automatically calculates reciprocal skill alignment scores.',
-                icon: RefreshCw,
+                desc: 'Our engine identifies complementary peers who want what you offer and vice versa.',
+                icon: ArrowRightLeft,
               },
               {
                 step: '03',
-                title: 'Exchange & Chat',
-                desc: 'Initiate exchange requests, schedule live sessions, and talk via real-time WebSocket chat.',
-                icon: ShieldCheck,
+                title: 'Swap & Learn',
+                desc: 'Schedule 1-on-1 sessions, prepare topics, and chat live in real-time.',
+                icon: Calendar,
               },
               {
                 step: '04',
-                title: 'Rate & Review',
-                desc: 'Conclude sessions and build your trusted peer reputation score.',
+                title: 'Rate & Build Trust',
+                desc: 'Conclude exchanges, share feedback, and build your verified reputation score.',
                 icon: Star,
               },
-            ].map((item, idx) => {
+            ].map((item) => {
               const Icon = item.icon;
               return (
-                <div key={idx} className="bg-slate-900 p-6 rounded-2xl border border-slate-800 relative group hover:border-indigo-500/50 transition-all">
-                  <div className="text-xs font-mono font-bold text-indigo-400 mb-4">{item.step}</div>
-                  <div className="w-12 h-12 rounded-xl bg-indigo-600/10 text-indigo-400 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                    <Icon className="w-6 h-6" />
+                <div
+                  key={item.step}
+                  className="bg-canvas-card border border-canvas-border rounded-card p-6 shadow-soft flex flex-col items-center text-center relative"
+                >
+                  <div className="w-12 h-12 rounded-full bg-teach-bg text-brand-teal border border-teach-border flex items-center justify-center mb-4">
+                    <Icon className="w-5 h-5" strokeWidth={1.75} />
                   </div>
-                  <h3 className="text-lg font-bold text-white mb-2">{item.title}</h3>
-                  <p className="text-sm text-slate-400 leading-relaxed">{item.desc}</p>
+                  <span className="text-[11px] font-heading font-bold text-brand-coral uppercase tracking-wider mb-1">
+                    Step {item.step}
+                  </span>
+                  <h3 className="font-heading font-semibold text-base text-ink-primary mb-2">
+                    {item.title}
+                  </h3>
+                  <p className="text-xs text-ink-secondary leading-relaxed">
+                    {item.desc}
+                  </p>
                 </div>
               );
             })}
@@ -115,41 +248,45 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* DISCOVER CATEGORIES PREVIEW */}
-      <section className="py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row md:items-end justify-between mb-12">
-            <div>
-              <h2 className="text-3xl font-bold text-white mb-2">Featured Skill Categories</h2>
-              <p className="text-slate-400 text-sm">Explore diverse knowledge disciplines offered by peers worldwide.</p>
-            </div>
-            <Link to="/discover" className="mt-4 md:mt-0 text-indigo-400 font-semibold hover:text-indigo-300 text-sm flex items-center gap-1">
-              View All Categories <ArrowRight className="w-4 h-4" />
+      {/* 4. CATEGORIES AS AN IRREGULAR CHIP CLOUD */}
+      <section className="py-16 bg-white border-t border-canvas-border">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <div className="max-w-2xl mx-auto mb-8">
+            <h2 className="font-heading font-bold text-2xl sm:text-3xl text-ink-primary">
+              Explore Skills by Category
+            </h2>
+            <p className="text-sm text-ink-secondary mt-1.5">
+              From web development to language tutoring, find members ready to trade expertise.
+            </p>
+          </div>
+
+          {/* Chip Cloud */}
+          <div className="flex flex-wrap justify-center gap-2.5 max-w-4xl mx-auto">
+            {categories.map((cat, idx) => (
+              <Link
+                key={cat.name || idx}
+                to={`/discover?category=${encodeURIComponent(cat.name)}`}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-canvas-border bg-canvas-subtle hover:bg-teach-bg hover:border-teach-border hover:text-teach-text transition-colors duration-150 text-xs sm:text-sm font-heading font-medium text-ink-secondary group"
+              >
+                <span>{cat.name}</span>
+                {cat.count !== undefined && (
+                  <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-white border border-canvas-border text-ink-muted group-hover:border-teach-border group-hover:text-teach-text">
+                    {cat.count}
+                  </span>
+                )}
+              </Link>
+            ))}
+          </div>
+
+          <div className="mt-8">
+            <Link to="/discover">
+              <Button variant="secondary" size="md">
+                Browse Full Directory
+              </Button>
             </Link>
           </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[
-              { name: 'Web Development', icon: Code, count: 'React, Node, Java' },
-              { name: 'UI/UX Design', icon: Palette, count: 'Figma, Photoshop' },
-              { name: 'Languages', icon: Languages, count: 'Spanish, German, Japanese' },
-              { name: 'Media & Editing', icon: Camera, count: 'Video Editing, Photography' },
-            ].map((cat, idx) => {
-              const Icon = cat.icon;
-              return (
-                <div key={idx} className="p-5 rounded-xl bg-slate-800/60 border border-slate-700/60 hover:bg-slate-800 transition-colors">
-                  <Icon className="w-8 h-8 text-indigo-400 mb-3" />
-                  <h4 className="font-bold text-white text-base">{cat.name}</h4>
-                  <p className="text-xs text-slate-400 mt-1">{cat.count}</p>
-                </div>
-              );
-            })}
-          </div>
         </div>
       </section>
-
     </div>
   );
-};
-
-export default LandingPage;
+}

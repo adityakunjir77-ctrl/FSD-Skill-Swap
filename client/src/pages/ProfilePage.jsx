@@ -1,66 +1,93 @@
 import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { useNotification } from '../context/NotificationContext';
-import { updateProfile } from '../services/userService';
+import { useToast } from '../components/ui/Toast';
+import { updateProfile, getUserProfile } from '../services/userService';
 import { getUserReviews } from '../services/reviewService';
-import { 
-  User, 
-  Mail, 
-  MapPin, 
-  Star, 
-  Sparkles, 
-  BookOpen, 
-  Shield, 
-  Edit3, 
-  Save, 
-  X, 
-  Plus, 
-  Clock, 
-  Briefcase, 
+import Avatar from '../components/ui/Avatar';
+import Button from '../components/ui/Button';
+import Pill from '../components/ui/Pill';
+import Modal from '../components/ui/Modal';
+import RatingStars from '../components/ui/RatingStars';
+import Skeleton from '../components/ui/Skeleton';
+import EmptyState from '../components/ui/EmptyState';
+import SendExchangeModal from '../components/SendExchangeModal';
+import {
+  User as UserIcon,
+  Mail,
+  MapPin,
+  Briefcase,
+  Clock,
+  Star,
   CheckCircle,
-  Loader2,
-  Award
+  Edit3,
+  Plus,
+  Send,
+  Shield,
+  Sparkles,
+  Quote,
+  ArrowRightLeft,
 } from 'lucide-react';
 
-const ProfilePage = () => {
-  const { user, updateUser, refreshProfile } = useAuth();
-  const { showNotification } = useNotification();
-  const [isEditing, setIsEditing] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [reviews, setReviews] = useState([]);
-  const [loadingReviews, setLoadingReviews] = useState(false);
+export default function ProfilePage() {
+  const { id: paramUserId } = useParams();
+  const { user: currentUser, updateUser, refreshProfile } = useAuth();
+  const { success, error } = useToast();
+  const navigate = useNavigate();
 
-  // Profile Form State
-  const [formData, setFormData] = useState({
+  const isPublicProfile = Boolean(paramUserId && paramUserId !== currentUser?._id);
+
+  const [profileUser, setProfileUser] = useState(isPublicProfile ? null : currentUser);
+  const [loading, setLoading] = useState(isPublicProfile);
+  const [reviews, setReviews] = useState([]);
+  const [loadingReviews, setLoadingReviews] = useState(true);
+
+  // Edit Modal State
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editFormData, setEditFormData] = useState({
     name: '',
     bio: '',
     location: '',
     experienceLevel: 'Intermediate',
     availability: '',
+    avatar: '',
   });
 
   const [skillsOffered, setSkillsOffered] = useState([]);
   const [skillsWanted, setSkillsWanted] = useState([]);
-
   const [newOfferedInput, setNewOfferedInput] = useState('');
   const [newWantedInput, setNewWantedInput] = useState('');
+  const [savingProfile, setSavingProfile] = useState(false);
+
+  // Propose Swap modal (when viewing public profile)
+  const [isProposeModalOpen, setIsProposeModalOpen] = useState(false);
 
   useEffect(() => {
-    if (user) {
-      setFormData({
-        name: user.name || '',
-        bio: user.bio || '',
-        location: user.location || 'Remote',
-        experienceLevel: user.experienceLevel || 'Intermediate',
-        availability: user.availability || 'Weekends & Evenings',
-      });
-      setSkillsOffered(user.skillsOffered || []);
-      setSkillsWanted(user.skillsWanted || []);
-      fetchReviews(user._id);
+    if (isPublicProfile) {
+      loadPublicProfile(paramUserId);
+    } else if (currentUser) {
+      setProfileUser(currentUser);
+      populateEditForm(currentUser);
+      loadReviews(currentUser._id);
     }
-  }, [user]);
+  }, [paramUserId, currentUser]);
 
-  const fetchReviews = async (userId) => {
+  const loadPublicProfile = async (userId) => {
+    setLoading(true);
+    try {
+      const res = await getUserProfile(userId);
+      if (res.success) {
+        setProfileUser(res.data);
+        loadReviews(userId);
+      }
+    } catch (err) {
+      error('Failed to load user profile');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadReviews = async (userId) => {
     setLoadingReviews(true);
     try {
       const res = await getUserReviews(userId);
@@ -68,26 +95,39 @@ const ProfilePage = () => {
         setReviews(res.data || []);
       }
     } catch (err) {
-      console.error(err);
+      console.error('[Profile] Error loading reviews:', err);
     } finally {
       setLoadingReviews(false);
     }
   };
 
-  const handleInputChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const populateEditForm = (usr) => {
+    setEditFormData({
+      name: usr.name || '',
+      bio: usr.bio || '',
+      location: usr.location || 'Remote',
+      experienceLevel: usr.experienceLevel || 'Intermediate',
+      availability: usr.availability || 'Weekends & Evenings',
+      avatar: usr.avatar || '',
+    });
+    setSkillsOffered(usr.skillsOffered || []);
+    setSkillsWanted(usr.skillsWanted || []);
+  };
+
+  const handleEditInputChange = (e) => {
+    setEditFormData({ ...editFormData, [e.target.name]: e.target.value });
   };
 
   const handleAddOfferedSkill = () => {
-    if (!newOfferedInput.trim()) return;
+    const text = newOfferedInput.trim();
+    if (!text) return;
     const exists = skillsOffered.some(
-      (sk) => (typeof sk === 'string' ? sk : sk.name).toLowerCase() === newOfferedInput.trim().toLowerCase()
+      (s) => (typeof s === 'object' ? s.name : s).toLowerCase() === text.toLowerCase()
     );
-    if (exists) {
-      return showNotification('Skill already in your offered list', 'info');
+    if (!exists) {
+      setSkillsOffered([...skillsOffered, text]);
+      setNewOfferedInput('');
     }
-    setSkillsOffered([...skillsOffered, newOfferedInput.trim()]);
-    setNewOfferedInput('');
   };
 
   const handleRemoveOfferedSkill = (index) => {
@@ -95,364 +135,504 @@ const ProfilePage = () => {
   };
 
   const handleAddWantedSkill = () => {
-    if (!newWantedInput.trim()) return;
+    const text = newWantedInput.trim();
+    if (!text) return;
     const exists = skillsWanted.some(
-      (sk) => (typeof sk === 'string' ? sk : sk.name).toLowerCase() === newWantedInput.trim().toLowerCase()
+      (s) => (typeof s === 'object' ? s.name : s).toLowerCase() === text.toLowerCase()
     );
-    if (exists) {
-      return showNotification('Skill already in your wanted list', 'info');
+    if (!exists) {
+      setSkillsWanted([...skillsWanted, text]);
+      setNewWantedInput('');
     }
-    setSkillsWanted([...skillsWanted, newWantedInput.trim()]);
-    setNewWantedInput('');
   };
 
   const handleRemoveWantedSkill = (index) => {
     setSkillsWanted(skillsWanted.filter((_, idx) => idx !== index));
   };
 
-  const handleSubmit = async (e) => {
+  const handleSaveProfile = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    setSavingProfile(true);
+
     try {
       const payload = {
-        ...formData,
-        skillsOffered: skillsOffered.map((s) => (typeof s === 'string' ? s : s.name)),
-        skillsWanted: skillsWanted.map((s) => (typeof s === 'string' ? s : s.name)),
+        ...editFormData,
+        skillsOffered: skillsOffered.map((s) => (typeof s === 'object' ? s.name : s)),
+        skillsWanted: skillsWanted.map((s) => (typeof s === 'object' ? s.name : s)),
       };
-      const response = await updateProfile(payload);
-      if (response.success) {
-        updateUser(response.data);
+
+      const res = await updateProfile(payload);
+      if (res.success) {
+        updateUser(res.data);
+        setProfileUser(res.data);
         await refreshProfile();
-        showNotification('Profile updated successfully!', 'success');
-        setIsEditing(false);
+        success('Profile updated successfully!');
+        setIsEditModalOpen(false);
       }
     } catch (err) {
-      const msg = err.response?.data?.message || 'Failed to update profile.';
-      showNotification(msg, 'error');
+      error(err.response?.data?.message || 'Failed to update profile');
     } finally {
-      setLoading(false);
+      setSavingProfile(false);
     }
   };
 
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <Skeleton variant="card" count={2} />
+      </div>
+    );
+  }
+
+  if (!profileUser) {
+    return (
+      <EmptyState
+        title="User profile not found"
+        description="The member profile you requested may have been removed or deactivated."
+        actionLabel="Back to Directory"
+        onAction={() => navigate('/discover')}
+      />
+    );
+  }
+
+  const offers = profileUser.skillsOffered || [];
+  const wants = profileUser.skillsWanted || [];
+
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-      {/* Profile Header Card */}
-      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-100 shadow-sm relative overflow-hidden">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
-          
-          <div className="flex flex-col sm:flex-row items-center gap-6">
-            <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-600 text-white font-extrabold text-3xl flex items-center justify-center border-4 border-white shadow-lg">
-              {user?.name ? user.name.slice(0, 2).toUpperCase() : 'US'}
+    <div className="space-y-6">
+      {/* 1. HEADER CARD (No cover photo, subtle brand pattern strip instead) */}
+      <div className="bg-canvas-card border border-canvas-border rounded-card shadow-soft overflow-hidden">
+        {/* Subtle Brand Pattern Strip */}
+        <div
+          className="h-16 w-full border-b border-canvas-border relative overflow-hidden"
+          style={{
+            backgroundColor: '#F0FDFA',
+            backgroundImage: `radial-gradient(#0F766E 0.75px, transparent 0.75px)`,
+            backgroundSize: '12px 12px',
+          }}
+        />
+
+        <div className="p-6 sm:p-8 pt-0 relative">
+          <div className="flex flex-col sm:flex-row items-center sm:items-end justify-between gap-4 -mt-10 mb-5">
+            {/* Large Avatar */}
+            <div className="ring-4 ring-white rounded-full bg-white shadow-soft">
+              <Avatar
+                src={profileUser.avatar}
+                name={profileUser.name}
+                id={profileUser._id}
+                size="2xl"
+              />
             </div>
-            <div className="text-center sm:text-left space-y-1">
-              <div className="flex items-center justify-center sm:justify-start gap-2">
-                <h1 className="text-2xl font-bold text-gray-900">{user?.name}</h1>
-                {user?.role === 'admin' && (
-                  <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-xs font-bold flex items-center gap-1">
-                    <Shield className="w-3 h-3" /> Admin
-                  </span>
-                )}
-              </div>
-              <p className="text-sm text-gray-500 flex items-center justify-center sm:justify-start gap-1">
-                <Mail className="w-4 h-4 text-gray-400" /> {user?.email}
-              </p>
-              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 text-xs text-gray-600 pt-1">
-                <span className="flex items-center gap-1 font-medium">
-                  <MapPin className="w-3.5 h-3.5 text-indigo-500" /> {user?.location || 'Remote'}
-                </span>
-                <span className="flex items-center gap-1 font-medium">
-                  <Briefcase className="w-3.5 h-3.5 text-purple-500" /> {user?.experienceLevel || 'Intermediate'}
-                </span>
-                <span className="flex items-center gap-1 font-bold text-amber-600">
-                  <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                  {user?.averageRating ? user.averageRating.toFixed(1) : '5.0'} ({reviews.length} reviews)
-                </span>
-              </div>
+
+            {/* Profile Action: Edit Profile (Own) or Propose Swap (Public) */}
+            <div className="self-center sm:self-auto">
+              {!isPublicProfile ? (
+                <Button
+                  variant="secondary"
+                  size="md"
+                  icon={Edit3}
+                  onClick={() => {
+                    populateEditForm(profileUser);
+                    setIsEditModalOpen(true);
+                  }}
+                >
+                  Edit Profile
+                </Button>
+              ) : (
+                <Button
+                  variant="coral"
+                  size="md"
+                  icon={Send}
+                  onClick={() => setIsProposeModalOpen(true)}
+                >
+                  Propose Skill Swap
+                </Button>
+              )}
             </div>
           </div>
 
-          <button
-            onClick={() => setIsEditing(!isEditing)}
-            className={`px-4 py-2.5 rounded-xl font-semibold text-sm flex items-center gap-2 transition-all ${
-              isEditing
-                ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-md shadow-indigo-200'
-            }`}
-          >
-            {isEditing ? (
-              <>
-                <X className="w-4 h-4" /> Cancel Edit
-              </>
-            ) : (
-              <>
-                <Edit3 className="w-4 h-4" /> Edit Profile
-              </>
-            )}
-          </button>
+          {/* User Bio and Meta Info */}
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="font-heading font-bold text-2xl sm:text-3xl text-ink-primary">
+                {profileUser.name}
+              </h1>
+              {profileUser.role === 'admin' && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-heading font-semibold bg-brand-coral-tint text-brand-coral border border-[#FED7CE]">
+                  <Shield className="w-3 h-3" /> Admin
+                </span>
+              )}
+            </div>
 
+            {profileUser.bio && (
+              <p className="text-sm text-ink-secondary max-w-3xl leading-relaxed">
+                {profileUser.bio}
+              </p>
+            )}
+
+            {/* Badges / Metrics Strip */}
+            <div className="flex flex-wrap items-center gap-4 text-xs text-ink-secondary pt-2 border-t border-canvas-border">
+              {profileUser.location && (
+                <span className="flex items-center gap-1">
+                  <MapPin className="w-3.5 h-3.5 text-brand-teal" />
+                  {profileUser.location}
+                </span>
+              )}
+              <span className="flex items-center gap-1">
+                <Briefcase className="w-3.5 h-3.5 text-brand-teal" />
+                {profileUser.experienceLevel || 'Intermediate'}
+              </span>
+              <span className="flex items-center gap-1">
+                <Clock className="w-3.5 h-3.5 text-brand-teal" />
+                {profileUser.availability || 'Weekends & Evenings'}
+              </span>
+              <span className="flex items-center gap-1">
+                <CheckCircle className="w-3.5 h-3.5 text-status-success" />
+                {profileUser.completedExchanges || 0} completed swaps
+              </span>
+              <RatingStars
+                rating={profileUser.averageRating || 5.0}
+                count={reviews.length}
+                size="sm"
+                showScore
+              />
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Main Content Area */}
-      {isEditing ? (
-        <form onSubmit={handleSubmit} className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-100 shadow-sm space-y-6">
-          <h3 className="text-lg font-bold text-gray-900 border-b border-gray-100 pb-3">Edit Profile Information</h3>
+      {/* 2. TWO PROMINENT COLUMNS: "I Can Teach" and "I Want to Learn" */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Left Column: I Can Teach */}
+        <div className="bg-canvas-card border border-teach-border/80 rounded-card p-6 shadow-soft space-y-3">
+          <div className="flex items-center justify-between pb-3 border-b border-canvas-border">
+            <h2 className="font-heading font-bold text-base text-teach-text flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-teach-text" />
+              Skills Offered to Teach ({offers.length})
+            </h2>
+            {!isPublicProfile && (
+              <button
+                type="button"
+                onClick={() => setIsEditModalOpen(true)}
+                className="text-xs font-heading font-semibold text-brand-teal hover:underline"
+              >
+                Manage
+              </button>
+            )}
+          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div className="flex flex-wrap gap-2 pt-1">
+            {offers.length === 0 ? (
+              <span className="text-xs text-ink-muted italic">
+                No skills listed yet.
+              </span>
+            ) : (
+              offers.map((sk, idx) => (
+                <Pill key={idx} variant="teach" size="md">
+                  {typeof sk === 'object' ? sk.name : sk}
+                </Pill>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* Right Column: I Want to Learn */}
+        <div className="bg-canvas-card border border-learn-border/80 rounded-card p-6 shadow-soft space-y-3">
+          <div className="flex items-center justify-between pb-3 border-b border-canvas-border">
+            <h2 className="font-heading font-bold text-base text-learn-text flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-learn-text" />
+              Skills Desired to Learn ({wants.length})
+            </h2>
+            {!isPublicProfile && (
+              <button
+                type="button"
+                onClick={() => setIsEditModalOpen(true)}
+                className="text-xs font-heading font-semibold text-brand-teal hover:underline"
+              >
+                Manage
+              </button>
+            )}
+          </div>
+
+          <div className="flex flex-wrap gap-2 pt-1">
+            {wants.length === 0 ? (
+              <span className="text-xs text-ink-muted italic">
+                No skills desired listed yet.
+              </span>
+            ) : (
+              wants.map((sk, idx) => (
+                <Pill key={idx} variant="learn" size="md">
+                  {typeof sk === 'object' ? sk.name : sk}
+                </Pill>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* 3. REVIEWS & TESTIMONIALS SECTION */}
+      <div className="bg-canvas-card border border-canvas-border rounded-card p-6 shadow-soft space-y-4">
+        <div className="flex items-center justify-between pb-3 border-b border-canvas-border">
+          <div>
+            <h2 className="font-heading font-bold text-base text-ink-primary flex items-center gap-2">
+              <Star className="w-4 h-4 text-[#F59E0B]" />
+              Verified Reviews & Trust Testimonials ({reviews.length})
+            </h2>
+            <p className="text-xs text-ink-secondary mt-0.5">
+              Feedback submitted by peers following completed skill exchange sessions.
+            </p>
+          </div>
+        </div>
+
+        {loadingReviews ? (
+          <Skeleton variant="text" count={3} />
+        ) : reviews.length === 0 ? (
+          <div className="py-8 text-center text-xs text-ink-muted">
+            No peer reviews recorded yet. Reviews are unlocked once an exchange is marked completed.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {reviews.map((rev) => (
+              <div
+                key={rev._id}
+                className="p-4 bg-canvas-subtle/70 border border-canvas-border rounded-card space-y-2.5 text-xs"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <Avatar
+                      src={rev.reviewer?.avatar}
+                      name={rev.reviewer?.name}
+                      id={rev.reviewer?._id}
+                      size="xs"
+                    />
+                    <span className="font-heading font-semibold text-ink-primary">
+                      {rev.reviewer?.name}
+                    </span>
+                  </div>
+                  <RatingStars rating={rev.rating} size="xs" />
+                </div>
+
+                <div className="flex items-start gap-1.5 text-ink-secondary italic pt-1">
+                  <Quote className="w-3.5 h-3.5 text-brand-teal flex-shrink-0 mt-0.5 not-italic" />
+                  <span>"{rev.feedback}"</span>
+                </div>
+
+                <div className="text-[10px] text-ink-muted pt-1 border-t border-canvas-border/50">
+                  {new Date(rev.createdAt).toLocaleDateString([], {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* EDIT PROFILE MODAL (When viewing own profile) */}
+      {!isPublicProfile && (
+        <Modal
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          title="Edit Profile & Skill Preferences"
+          subtitle="Keep your profile details and learning interests up to date."
+          maxWidth="max-w-xl"
+          footer={
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsEditModalOpen(false)}
+                disabled={savingProfile}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                size="md"
+                loading={savingProfile}
+                onClick={handleSaveProfile}
+              >
+                Save Changes
+              </Button>
+            </>
+          }
+        >
+          <form onSubmit={handleSaveProfile} className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">Full Name</label>
+              <label className="block text-xs font-heading font-semibold text-ink-primary mb-1">
+                Full Name
+              </label>
               <input
                 type="text"
                 name="name"
                 required
-                value={formData.name}
-                onChange={handleInputChange}
-                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                value={editFormData.name}
+                onChange={handleEditInputChange}
+                className="w-full px-3 py-2 text-xs sm:text-sm bg-white border border-canvas-border rounded-input text-ink-primary focus-ring"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">Location</label>
-              <input
-                type="text"
-                name="location"
-                value={formData.location}
-                onChange={handleInputChange}
-                placeholder="e.g. Mumbai, India or Remote"
-                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              <label className="block text-xs font-heading font-semibold text-ink-primary mb-1">
+                Bio & Background
+              </label>
+              <textarea
+                rows={3}
+                name="bio"
+                value={editFormData.bio}
+                onChange={handleEditInputChange}
+                placeholder="Share your experience and what you're passionate about..."
+                className="w-full px-3 py-2 text-xs sm:text-sm bg-white border border-canvas-border rounded-input text-ink-primary focus-ring resize-none leading-relaxed"
               />
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">Experience Level</label>
-              <select
-                name="experienceLevel"
-                value={formData.experienceLevel}
-                onChange={handleInputChange}
-                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              >
-                <option value="Beginner">Beginner</option>
-                <option value="Intermediate">Intermediate</option>
-                <option value="Advanced">Advanced</option>
-                <option value="Expert">Expert</option>
-              </select>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-heading font-semibold text-ink-primary mb-1">
+                  Location
+                </label>
+                <input
+                  type="text"
+                  name="location"
+                  value={editFormData.location}
+                  onChange={handleEditInputChange}
+                  placeholder="e.g. Remote, San Francisco"
+                  className="w-full px-3 py-2 text-xs sm:text-sm bg-white border border-canvas-border rounded-input text-ink-primary focus-ring"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-heading font-semibold text-ink-primary mb-1">
+                  Experience Level
+                </label>
+                <select
+                  name="experienceLevel"
+                  value={editFormData.experienceLevel}
+                  onChange={handleEditInputChange}
+                  className="w-full px-3 py-2 text-xs sm:text-sm bg-white border border-canvas-border rounded-input text-ink-primary focus-ring"
+                >
+                  <option value="Beginner">Beginner</option>
+                  <option value="Intermediate">Intermediate</option>
+                  <option value="Advanced">Advanced</option>
+                  <option value="Expert">Expert</option>
+                </select>
+              </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">Availability</label>
+              <label className="block text-xs font-heading font-semibold text-ink-primary mb-1">
+                Availability Notes
+              </label>
               <input
                 type="text"
                 name="availability"
-                value={formData.availability}
-                onChange={handleInputChange}
+                value={editFormData.availability}
+                onChange={handleEditInputChange}
                 placeholder="e.g. Weekends & Evenings"
-                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 text-xs sm:text-sm bg-white border border-canvas-border rounded-input text-ink-primary focus-ring"
               />
             </div>
-          </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">Bio / About Me</label>
-            <textarea
-              name="bio"
-              rows={3}
-              value={formData.bio}
-              onChange={handleInputChange}
-              placeholder="Tell fellow learners about your background and goals..."
-              className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
-          </div>
-
-          {/* Skills Offered Manager */}
-          <div className="space-y-3 pt-2">
-            <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider">Skills You Offer to Teach</label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={newOfferedInput}
-                onChange={(e) => setNewOfferedInput(e.target.value)}
-                placeholder="Add a skill (e.g. React, Java, UI/UX)..."
-                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddOfferedSkill(); } }}
-                className="flex-grow px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-              <button
-                type="button"
-                onClick={handleAddOfferedSkill}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-semibold flex items-center gap-1 hover:bg-indigo-700"
-              >
-                <Plus className="w-4 h-4" /> Add
-              </button>
-            </div>
-            <div className="flex flex-wrap gap-2 pt-1">
-              {skillsOffered.map((sk, idx) => {
-                const name = typeof sk === 'string' ? sk : sk.name;
-                return (
-                  <span key={idx} className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-semibold border border-indigo-100">
-                    {name}
-                    <button type="button" onClick={() => handleRemoveOfferedSkill(idx)} className="text-indigo-400 hover:text-indigo-900">
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </span>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Skills Wanted Manager */}
-          <div className="space-y-3 pt-2">
-            <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider">Skills You Want to Learn</label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={newWantedInput}
-                onChange={(e) => setNewWantedInput(e.target.value)}
-                placeholder="Add a desired skill (e.g. Photoshop, Python, German)..."
-                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddWantedSkill(); } }}
-                className="flex-grow px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-              />
-              <button
-                type="button"
-                onClick={handleAddWantedSkill}
-                className="px-4 py-2 bg-purple-600 text-white rounded-xl text-sm font-semibold flex items-center gap-1 hover:bg-purple-700"
-              >
-                <Plus className="w-4 h-4" /> Add
-              </button>
-            </div>
-            <div className="flex flex-wrap gap-2 pt-1">
-              {skillsWanted.map((sk, idx) => {
-                const name = typeof sk === 'string' ? sk : sk.name;
-                return (
-                  <span key={idx} className="inline-flex items-center gap-1.5 px-3 py-1 bg-purple-50 text-purple-700 rounded-lg text-xs font-semibold border border-purple-100">
-                    {name}
-                    <button type="button" onClick={() => handleRemoveWantedSkill(idx)} className="text-purple-400 hover:text-purple-900">
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </span>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="pt-4 border-t border-gray-100 flex justify-end gap-3">
-            <button
-              type="button"
-              onClick={() => setIsEditing(false)}
-              className="px-5 py-2.5 rounded-xl border border-gray-200 text-gray-600 text-sm font-semibold hover:bg-gray-50"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold shadow-md flex items-center gap-2 disabled:opacity-50"
-            >
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              Save Profile Changes
-            </button>
-          </div>
-        </form>
-      ) : (
-        <div className="space-y-8">
-          {/* Bio Card */}
-          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-100 shadow-sm space-y-2">
-            <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider">About Me</h3>
-            <p className="text-gray-700 text-sm leading-relaxed">{user?.bio || 'No bio provided yet.'}</p>
-          </div>
-
-          {/* Skills Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-100 shadow-sm space-y-4">
-              <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
-                <BookOpen className="w-5 h-5 text-indigo-600" /> Skills I Offer to Teach
-              </h3>
-              <p className="text-xs text-gray-500">Skills you are ready to share with matched partners.</p>
-              <div className="flex flex-wrap gap-2 pt-1">
-                {user?.skillsOffered?.length ? (
-                  user.skillsOffered.map((sk, idx) => (
-                    <span key={idx} className="px-3.5 py-1.5 bg-indigo-50 text-indigo-700 rounded-xl text-xs font-bold border border-indigo-100 shadow-xs">
-                      {typeof sk === 'object' ? sk.name : sk}
-                    </span>
-                  ))
-                ) : (
-                  <p className="text-xs text-gray-400 italic">No skills offered yet.</p>
-                )}
-              </div>
-            </div>
-
-            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-100 shadow-sm space-y-4">
-              <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-purple-600" /> Skills I Want to Learn
-              </h3>
-              <p className="text-xs text-gray-500">Skills you are looking to acquire from mentors.</p>
-              <div className="flex flex-wrap gap-2 pt-1">
-                {user?.skillsWanted?.length ? (
-                  user.skillsWanted.map((sk, idx) => (
-                    <span key={idx} className="px-3.5 py-1.5 bg-purple-50 text-purple-700 rounded-xl text-xs font-bold border border-purple-100 shadow-xs">
-                      {typeof sk === 'object' ? sk.name : sk}
-                    </span>
-                  ))
-                ) : (
-                  <p className="text-xs text-gray-400 italic">No desired skills listed yet.</p>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Peer Ratings & Reviews Section */}
-          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-100 shadow-sm space-y-4">
-            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-              <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
-                <Award className="w-5 h-5 text-amber-500" /> Received Ratings & Peer Feedback ({reviews.length})
-              </h3>
-              <span className="text-xs font-bold text-amber-600 flex items-center gap-1">
-                <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-                {user?.averageRating ? user.averageRating.toFixed(1) : '5.0'} / 5.0
-              </span>
-            </div>
-
-            {loadingReviews ? (
-              <p className="text-xs text-gray-400 py-4 text-center">Loading reviews...</p>
-            ) : reviews.length === 0 ? (
-              <p className="text-xs text-gray-400 py-4 text-center italic">
-                No reviews received yet. Complete skill exchanges to build your trusted peer reputation!
-              </p>
-            ) : (
-              <div className="space-y-4">
-                {reviews.map((rev) => (
-                  <div key={rev._id} className="p-4 bg-gray-50 rounded-2xl border border-gray-100 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-full bg-indigo-600 text-white font-bold text-xs flex items-center justify-center">
-                          {rev.reviewer?.name ? rev.reviewer.name.slice(0, 2).toUpperCase() : 'US'}
-                        </div>
-                        <div>
-                          <p className="text-xs font-bold text-gray-900">{rev.reviewer?.name}</p>
-                          <p className="text-[10px] text-gray-400">{new Date(rev.createdAt).toLocaleDateString()}</p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-1">
-                        {[1, 2, 3, 4, 5].map((s) => (
-                          <Star
-                            key={s}
-                            className={`w-3.5 h-3.5 ${
-                              s <= rev.rating ? 'text-amber-400 fill-amber-400' : 'text-gray-200'
-                            }`}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                    <p className="text-xs text-gray-700 leading-relaxed italic">"{rev.feedback}"</p>
-                  </div>
+            {/* Manage Offered Skills */}
+            <div className="pt-2 border-t border-canvas-border">
+              <label className="block text-xs font-heading font-semibold text-teach-text uppercase tracking-wider mb-1.5">
+                Manage Skills You Teach
+              </label>
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                {skillsOffered.map((sk, idx) => (
+                  <Pill
+                    key={idx}
+                    variant="teach"
+                    size="sm"
+                    onRemove={() => handleRemoveOfferedSkill(idx)}
+                  >
+                    {typeof sk === 'object' ? sk.name : sk}
+                  </Pill>
                 ))}
               </div>
-            )}
-          </div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Add skill you teach..."
+                  value={newOfferedInput}
+                  onChange={(e) => setNewOfferedInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddOfferedSkill();
+                    }
+                  }}
+                  className="flex-1 px-3 py-1.5 text-xs bg-white border border-canvas-border rounded-input text-ink-primary focus-ring"
+                />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={handleAddOfferedSkill}
+                >
+                  Add
+                </Button>
+              </div>
+            </div>
 
-        </div>
+            {/* Manage Wanted Skills */}
+            <div className="pt-2 border-t border-canvas-border">
+              <label className="block text-xs font-heading font-semibold text-learn-text uppercase tracking-wider mb-1.5">
+                Manage Skills You Want to Learn
+              </label>
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                {skillsWanted.map((sk, idx) => (
+                  <Pill
+                    key={idx}
+                    variant="learn"
+                    size="sm"
+                    onRemove={() => handleRemoveWantedSkill(idx)}
+                  >
+                    {typeof sk === 'object' ? sk.name : sk}
+                  </Pill>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Add skill you want..."
+                  value={newWantedInput}
+                  onChange={(e) => setNewWantedInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddWantedSkill();
+                    }
+                  }}
+                  className="flex-1 px-3 py-1.5 text-xs bg-white border border-canvas-border rounded-input text-ink-primary focus-ring"
+                />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={handleAddWantedSkill}
+                >
+                  Add
+                </Button>
+              </div>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* PROPOSE SWAP MODAL (When viewing public profile) */}
+      {isPublicProfile && isProposeModalOpen && (
+        <SendExchangeModal
+          isOpen={isProposeModalOpen}
+          onClose={() => setIsProposeModalOpen(false)}
+          partnerUser={profileUser}
+          onSuccess={() => {
+            setIsProposeModalOpen(false);
+          }}
+        />
       )}
     </div>
   );
-};
-
-export default ProfilePage;
+}

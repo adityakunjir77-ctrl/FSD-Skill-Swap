@@ -3,23 +3,30 @@ import { getUserExchanges } from '../services/exchangeService';
 import { getMessagesByExchange, sendMessage as sendMessageApi } from '../services/messageService';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
-import { useNotification } from '../context/NotificationContext';
-import { 
-  MessageSquare, 
-  Send, 
-  User, 
-  ArrowRightLeft, 
-  Loader2, 
-  Check, 
+import { useToast } from '../components/ui/Toast';
+import { useNavigate } from 'react-router-dom';
+import Avatar from '../components/ui/Avatar';
+import Button from '../components/ui/Button';
+import Pill from '../components/ui/Pill';
+import Skeleton from '../components/ui/Skeleton';
+import EmptyState from '../components/ui/EmptyState';
+import {
+  MessageSquare,
+  Send,
+  ArrowLeft,
+  ArrowRightLeft,
+  Check,
   CheckCheck,
-  BookOpen,
-  Sparkles
+  Clock,
+  Sparkles,
+  Info,
 } from 'lucide-react';
 
-const MessagesPage = () => {
+export default function MessagesPage() {
   const { user: currentUser } = useAuth();
   const { socket, connected } = useSocket();
-  const { showNotification } = useNotification();
+  const { error } = useToast();
+  const navigate = useNavigate();
 
   const [exchanges, setExchanges] = useState([]);
   const [selectedExchange, setSelectedExchange] = useState(null);
@@ -27,6 +34,7 @@ const MessagesPage = () => {
   const [newMessageText, setNewMessageText] = useState('');
   const [loadingExchanges, setLoadingExchanges] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
+  const [showMobileThread, setShowMobileThread] = useState(false);
 
   const chatBottomRef = useRef(null);
 
@@ -35,12 +43,11 @@ const MessagesPage = () => {
     fetchAcceptedExchanges();
   }, []);
 
-  // Fetch messages when selected conversation changes
+  // Fetch messages when conversation changes & join socket room
   useEffect(() => {
     if (selectedExchange) {
       fetchChatMessages(selectedExchange._id);
 
-      // Join socket room
       if (socket) {
         socket.emit('join-exchange-room', selectedExchange._id);
       }
@@ -83,7 +90,10 @@ const MessagesPage = () => {
       const res = await getUserExchanges();
       if (res.success) {
         const active = (res.data.all || []).filter(
-          (ex) => ex.status === 'Accepted' || ex.status === 'In Progress' || ex.status === 'Completed'
+          (ex) =>
+            ex.status === 'Accepted' ||
+            ex.status === 'In Progress' ||
+            ex.status === 'Completed'
         );
         setExchanges(active);
         if (active.length > 0) {
@@ -91,7 +101,7 @@ const MessagesPage = () => {
         }
       }
     } catch (err) {
-      showNotification('Failed to load active exchange partners', 'error');
+      error('Failed to load active exchange partners');
     } finally {
       setLoadingExchanges(false);
     }
@@ -106,7 +116,7 @@ const MessagesPage = () => {
         scrollToBottom();
       }
     } catch (err) {
-      showNotification('Failed to load chat history', 'error');
+      error('Failed to load chat history');
     } finally {
       setLoadingMessages(false);
     }
@@ -120,9 +130,11 @@ const MessagesPage = () => {
     setNewMessageText('');
 
     const isSender = selectedExchange.sender._id === currentUser._id;
-    const receiverId = isSender ? selectedExchange.receiver._id : selectedExchange.sender._id;
+    const receiverId = isSender
+      ? selectedExchange.receiver._id
+      : selectedExchange.sender._id;
 
-    // Send via Socket.io for instant delivery
+    // Real-time Socket.io dispatch
     if (socket && connected) {
       socket.emit('send-message', {
         exchangeId: selectedExchange._id,
@@ -131,7 +143,7 @@ const MessagesPage = () => {
         content,
       });
     } else {
-      // Fallback REST API call
+      // Fallback REST API
       try {
         const res = await sendMessageApi({
           exchangeId: selectedExchange._id,
@@ -142,172 +154,314 @@ const MessagesPage = () => {
           scrollToBottom();
         }
       } catch (err) {
-        showNotification('Failed to send message', 'error');
+        error('Failed to send message');
       }
     }
   };
 
+  // Helper to format timestamps and day separators
+  const formatTime = (dateStr) => {
+    return new Date(dateStr).toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  const getDaySeparator = (dateStr, prevDateStr) => {
+    const d1 = new Date(dateStr).toDateString();
+    const d2 = prevDateStr ? new Date(prevDateStr).toDateString() : null;
+    if (d1 === d2) return null;
+
+    const today = new Date().toDateString();
+    const yesterday = new Date(Date.now() - 86400000).toDateString();
+
+    if (d1 === today) return 'Today';
+    if (d1 === yesterday) return 'Yesterday';
+    return new Date(dateStr).toLocaleDateString([], {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+    });
+  };
+
+  const currentPartner = selectedExchange
+    ? selectedExchange.sender._id === currentUser._id
+      ? selectedExchange.receiver
+      : selectedExchange.sender
+    : null;
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-      <div>
-        <h1 className="text-2xl font-extrabold text-gray-900 flex items-center gap-2">
-          <MessageSquare className="w-7 h-7 text-indigo-600" /> Real-Time Chat Engine
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="pb-3 border-b border-canvas-border">
+        <h1 className="font-heading font-bold text-2xl sm:text-3xl text-ink-primary flex items-center gap-2">
+          <MessageSquare className="w-6 h-6 text-brand-teal" />
+          Direct Exchange Chat
         </h1>
-        <p className="text-sm text-gray-500 mt-1">
-          Direct WebSocket 1-on-1 communication with your accepted skill exchange partners.
+        <p className="text-xs sm:text-sm text-ink-secondary mt-1">
+          Real-time 1-on-1 messaging with your accepted learning partners.
         </p>
       </div>
 
-      <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden grid grid-cols-1 md:grid-cols-3 min-h-[580px]">
-        
-        {/* Left Sidebar: Conversations List */}
-        <div className="border-r border-gray-100 p-4 space-y-3 bg-gray-50/50">
-          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider px-2">
-            Active Exchange Partners ({exchanges.length})
-          </h3>
+      {/* Main Split Chat Container */}
+      <div className="bg-canvas-card border border-canvas-border rounded-card shadow-soft overflow-hidden grid grid-cols-1 md:grid-cols-12 min-h-[580px] max-h-[750px] h-[calc(100vh-240px)]">
+        {/* Left Column: Conversations List (hidden on mobile when thread is open) */}
+        <div
+          className={`md:col-span-4 lg:col-span-4 border-r border-canvas-border flex flex-col bg-canvas-subtle/50 ${
+            showMobileThread ? 'hidden md:flex' : 'flex'
+          }`}
+        >
+          <div className="p-4 border-b border-canvas-border bg-white flex items-center justify-between">
+            <h2 className="font-heading font-bold text-xs text-ink-muted uppercase tracking-wider">
+              Conversations ({exchanges.length})
+            </h2>
+            {connected ? (
+              <span className="inline-flex items-center gap-1 text-[11px] text-status-success font-medium">
+                <span className="w-1.5 h-1.5 rounded-full bg-status-success animate-pulse" />
+                Live
+              </span>
+            ) : (
+              <span className="text-[11px] text-ink-muted">Polling</span>
+            )}
+          </div>
 
-          {loadingExchanges ? (
-            <div className="py-12 text-center">
-              <Loader2 className="w-6 h-6 text-indigo-600 animate-spin mx-auto mb-2" />
-              <p className="text-xs text-gray-500">Loading partners...</p>
-            </div>
-          ) : exchanges.length === 0 ? (
-            <div className="p-6 text-center text-xs text-gray-400 bg-white rounded-2xl border border-dashed border-gray-200">
-              No active exchange partners yet. Accept a skill request to start chatting!
-            </div>
-          ) : (
-            <div className="space-y-1.5">
-              {exchanges.map((ex) => {
-                const isReceiver = ex.receiver._id === currentUser._id;
-                const partner = isReceiver ? ex.sender : ex.receiver;
+          <div className="flex-1 overflow-y-auto divide-y divide-canvas-border/60">
+            {loadingExchanges ? (
+              <div className="p-4 space-y-3">
+                <Skeleton variant="text" count={4} />
+              </div>
+            ) : exchanges.length === 0 ? (
+              <div className="p-6 text-center text-xs text-ink-muted">
+                No active conversations yet. Accept an exchange request to start chatting!
+              </div>
+            ) : (
+              exchanges.map((ex) => {
+                const isSender = ex.sender._id === currentUser._id;
+                const partner = isSender ? ex.receiver : ex.sender;
                 const isSelected = selectedExchange?._id === ex._id;
+
+                const youTeach = isSender ? ex.offeredSkill : ex.wantedSkill;
+                const theyTeach = isSender ? ex.wantedSkill : ex.offeredSkill;
 
                 return (
                   <button
                     key={ex._id}
-                    onClick={() => setSelectedExchange(ex)}
-                    className={`w-full text-left p-3 rounded-2xl transition-all flex items-center gap-3 ${
+                    type="button"
+                    onClick={() => {
+                      setSelectedExchange(ex);
+                      setShowMobileThread(true);
+                    }}
+                    className={`w-full text-left p-3.5 transition-colors flex items-start gap-3 select-none ${
                       isSelected
-                        ? 'bg-indigo-600 text-white shadow-md'
-                        : 'bg-white hover:bg-gray-100 text-gray-800 border border-gray-100'
+                        ? 'bg-white border-l-3 border-brand-teal shadow-soft'
+                        : 'hover:bg-canvas-subtle'
                     }`}
                   >
-                    <div className="w-10 h-10 rounded-full bg-indigo-200 text-indigo-800 font-bold text-xs flex items-center justify-center border border-white shrink-0">
-                      {partner.name ? partner.name.slice(0, 2).toUpperCase() : 'US'}
-                    </div>
+                    <Avatar
+                      src={partner?.avatar}
+                      name={partner?.name}
+                      id={partner?._id}
+                      size="md"
+                    />
 
-                    <div className="truncate flex-grow">
-                      <p className="font-bold text-sm truncate">{partner.name}</p>
-                      <p className={`text-[11px] truncate ${isSelected ? 'text-indigo-100' : 'text-gray-500'}`}>
-                        {ex.offeredSkill} ⇄ {ex.wantedSkill}
-                      </p>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="font-heading font-bold text-xs text-ink-primary truncate">
+                          {partner?.name}
+                        </span>
+                        <span className="text-[10px] text-ink-muted">
+                          {new Date(ex.updatedAt).toLocaleDateString([], {
+                            month: 'short',
+                            day: 'numeric',
+                          })}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 mt-1 text-[11px] text-ink-secondary truncate">
+                        <span className="text-teach-text font-medium truncate">
+                          {theyTeach}
+                        </span>
+                        <span>↔</span>
+                        <span className="text-learn-text font-medium truncate">
+                          {youTeach}
+                        </span>
+                      </div>
                     </div>
                   </button>
                 );
-              })}
-            </div>
-          )}
+              })
+            )}
+          </div>
         </div>
 
-        {/* Right Area: Chat Window */}
-        <div className="md:col-span-2 flex flex-col justify-between bg-white">
-          {selectedExchange ? (
+        {/* Right Column: Chat Thread */}
+        <div
+          className={`md:col-span-8 lg:col-span-8 flex flex-col bg-white ${
+            !showMobileThread ? 'hidden md:flex' : 'flex'
+          }`}
+        >
+          {selectedExchange && currentPartner ? (
             <>
-              {/* Chat Header */}
-              {(() => {
-                const isReceiver = selectedExchange.receiver._id === currentUser._id;
-                const partner = isReceiver ? selectedExchange.sender : selectedExchange.receiver;
+              {/* Thread Header */}
+              <div className="px-4 py-3 border-b border-canvas-border flex items-center justify-between gap-3 bg-white">
+                <div className="flex items-center gap-3 min-w-0">
+                  {/* Mobile Back Button */}
+                  <button
+                    type="button"
+                    onClick={() => setShowMobileThread(false)}
+                    className="md:hidden p-1 rounded text-ink-muted hover:text-ink-primary"
+                    aria-label="Back to conversations"
+                  >
+                    <ArrowLeft className="w-5 h-5" />
+                  </button>
 
-                return (
-                  <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-white">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-600 text-white font-bold text-xs flex items-center justify-center shadow-sm">
-                        {partner.name ? partner.name.slice(0, 2).toUpperCase() : 'US'}
-                      </div>
-                      <div>
-                        <h3 className="font-bold text-gray-900 text-sm">{partner.name}</h3>
-                        <p className="text-[11px] text-gray-500 flex items-center gap-1">
-                          <BookOpen className="w-3 h-3 text-indigo-500" /> {selectedExchange.offeredSkill} 
-                          <span>⇄</span> 
-                          <Sparkles className="w-3 h-3 text-purple-500" /> {selectedExchange.wantedSkill}
-                        </p>
-                      </div>
-                    </div>
+                  <Avatar
+                    src={currentPartner?.avatar}
+                    name={currentPartner?.name}
+                    id={currentPartner?._id}
+                    size="sm"
+                  />
 
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
-                      <span className="text-xs font-semibold text-emerald-600">WebSocket Live</span>
+                  <div className="min-w-0">
+                    <h2 className="font-heading font-bold text-sm text-ink-primary truncate">
+                      {currentPartner?.name}
+                    </h2>
+                    <div className="flex items-center gap-2 text-[11px] text-ink-secondary mt-0.5">
+                      <span>{currentPartner?.location || 'Remote'}</span>
+                      <span>•</span>
+                      <span className="text-teach-text font-medium">
+                        Swapping: {selectedExchange.offeredSkill} ↔ {selectedExchange.wantedSkill}
+                      </span>
                     </div>
                   </div>
-                );
-              })()}
+                </div>
 
-              {/* Chat Messages Body */}
-              <div className="flex-grow p-4 sm:p-6 overflow-y-auto space-y-3 bg-slate-50/50 max-h-[420px]">
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => navigate(`/profile/${currentPartner._id}`)}
+                  >
+                    View Profile
+                  </Button>
+                </div>
+              </div>
+
+              {/* Messages Thread Container */}
+              <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-canvas/40">
                 {loadingMessages ? (
-                  <div className="py-12 text-center">
-                    <Loader2 className="w-6 h-6 text-indigo-600 animate-spin mx-auto mb-2" />
-                    <p className="text-xs text-gray-500">Loading chat thread...</p>
+                  <div className="p-8 text-center">
+                    <Skeleton variant="text" count={3} />
                   </div>
                 ) : messages.length === 0 ? (
-                  <div className="py-12 text-center text-xs text-gray-400">
-                    No messages in this conversation yet. Send a hello! 👋
+                  <div className="h-full flex flex-col items-center justify-center text-center p-8 text-ink-muted text-xs">
+                    <div className="w-12 h-12 rounded-full bg-teach-bg text-brand-teal flex items-center justify-center mb-2">
+                      <Sparkles className="w-5 h-5" />
+                    </div>
+                    <div className="font-heading font-semibold text-ink-primary text-sm">
+                      Start the Conversation
+                    </div>
+                    <p className="mt-1 max-w-xs text-ink-secondary">
+                      Say hello to {currentPartner.name}! Discuss your availability, exchange goals, and session format.
+                    </p>
                   </div>
                 ) : (
-                  messages.map((msg) => {
-                    const isMe = (msg.sender?._id || msg.sender) === currentUser._id;
+                  messages.map((msg, idx) => {
+                    const isOwn =
+                      msg.sender?._id === currentUser?._id ||
+                      msg.sender === currentUser?._id;
+
+                    const prevMsg = idx > 0 ? messages[idx - 1] : null;
+                    const daySeparator = getDaySeparator(
+                      msg.createdAt,
+                      prevMsg?.createdAt
+                    );
+
                     return (
-                      <div
-                        key={msg._id}
-                        className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}
-                      >
+                      <React.Fragment key={msg._id || idx}>
+                        {daySeparator && (
+                          <div className="flex items-center justify-center my-4">
+                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-heading font-medium bg-canvas-subtle text-ink-muted border border-canvas-border">
+                              {daySeparator}
+                            </span>
+                          </div>
+                        )}
+
                         <div
-                          className={`max-w-xs sm:max-w-md px-4 py-2.5 rounded-2xl text-xs leading-relaxed shadow-xs ${
-                            isMe
-                              ? 'bg-indigo-600 text-white rounded-br-xs'
-                              : 'bg-white text-gray-800 border border-gray-200 rounded-bl-xs'
+                          className={`flex items-end gap-2 ${
+                            isOwn ? 'justify-end' : 'justify-start'
                           }`}
                         >
-                          {msg.content}
+                          {!isOwn && (
+                            <Avatar
+                              src={currentPartner?.avatar}
+                              name={currentPartner?.name}
+                              id={currentPartner?._id}
+                              size="xs"
+                              className="mb-1"
+                            />
+                          )}
+
+                          <div
+                            className={`max-w-[75%] sm:max-w-[65%] px-3.5 py-2 text-xs sm:text-sm leading-relaxed ${
+                              isOwn
+                                ? 'bg-teach-bg text-ink-primary border border-teach-border rounded-card rounded-br-none'
+                                : 'bg-white text-ink-primary border border-canvas-border rounded-card rounded-bl-none shadow-soft'
+                            }`}
+                          >
+                            <p className="whitespace-pre-wrap break-words">
+                              {msg.content}
+                            </p>
+                            <div
+                              className={`flex items-center gap-1 justify-end text-[10px] mt-1 ${
+                                isOwn ? 'text-teach-text' : 'text-ink-muted'
+                              }`}
+                            >
+                              <span>{formatTime(msg.createdAt)}</span>
+                              {isOwn && (
+                                <Check className="w-3 h-3 text-teach-text" strokeWidth={2} />
+                              )}
+                            </div>
+                          </div>
                         </div>
-                        <span className="text-[10px] text-gray-400 mt-1 px-1">
-                          {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      </div>
+                      </React.Fragment>
                     );
                   })
                 )}
                 <div ref={chatBottomRef} />
               </div>
 
-              {/* Chat Input Form */}
-              <form onSubmit={handleSendMessage} className="p-4 border-t border-gray-100 flex gap-2 bg-white">
+              {/* Tidy Message Composer */}
+              <form
+                onSubmit={handleSendMessage}
+                className="p-3 border-t border-canvas-border bg-white flex items-center gap-2"
+              >
                 <input
                   type="text"
+                  placeholder={`Message ${currentPartner.name.split(' ')[0]}...`}
                   value={newMessageText}
                   onChange={(e) => setNewMessageText(e.target.value)}
-                  placeholder="Type a message..."
-                  className="flex-grow px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="flex-1 px-3.5 py-2 text-xs sm:text-sm bg-canvas-subtle/70 border border-canvas-border rounded-input text-ink-primary placeholder-ink-muted focus-ring transition-colors"
                 />
-                <button
+                <Button
                   type="submit"
+                  variant="primary"
+                  size="sm"
                   disabled={!newMessageText.trim()}
-                  className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-bold shadow-md shadow-indigo-100 flex items-center gap-1 transition-colors disabled:opacity-40"
+                  icon={Send}
+                  aria-label="Send message"
                 >
-                  <Send className="w-4 h-4" /> Send
-                </button>
+                  Send
+                </Button>
               </form>
             </>
           ) : (
-            <div className="p-12 text-center text-xs text-gray-400 my-auto">
-              Select an exchange partner from the left sidebar to start chatting.
+            <div className="h-full flex items-center justify-center p-8 text-center text-xs text-ink-muted">
+              Select an exchange partner from the left panel to begin chatting.
             </div>
           )}
         </div>
-
       </div>
     </div>
   );
-};
-
-export default MessagesPage;
+}

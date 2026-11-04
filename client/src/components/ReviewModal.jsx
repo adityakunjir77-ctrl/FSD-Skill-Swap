@@ -1,26 +1,41 @@
 import React, { useState } from 'react';
-import { useNotification } from '../context/NotificationContext';
+import { useAuth } from '../context/AuthContext';
+import { useToast } from '../components/ui/Toast';
 import { createReview } from '../services/reviewService';
-import { Star, X, Loader2, Award } from 'lucide-react';
+import Modal from './ui/Modal';
+import Button from './ui/Button';
+import RatingStars from './ui/RatingStars';
+import { Star, Award } from 'lucide-react';
 
-const ReviewModal = ({ exchange, onClose, onSuccess }) => {
-  const { showNotification } = useNotification();
+export default function ReviewModal({
+  exchange,
+  isOpen,
+  onClose,
+  onSuccess,
+}) {
+  const { user: currentUser } = useAuth();
+  const { success, error } = useToast();
   const [rating, setRating] = useState(5);
-  const [hoverRating, setHoverRating] = useState(0);
   const [feedback, setFeedback] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const partner = exchange?.sender?._id === exchange?.receiver?._id
-    ? exchange?.sender
-    : exchange?.receiver;
+  // Accurately resolve partner relative to current logged-in user
+  const partner =
+    exchange?.sender?._id === currentUser?._id
+      ? exchange?.receiver
+      : exchange?.sender;
+
+  if (!exchange || !partner) return null;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!rating) {
-      return showNotification('Please select a star rating.', 'error');
+      error('Please select a star rating.');
+      return;
     }
     if (!feedback.trim() || feedback.trim().length < 5) {
-      return showNotification('Please provide feedback (at least 5 characters).', 'error');
+      error('Please provide written feedback (at least 5 characters).');
+      return;
     }
 
     setLoading(true);
@@ -32,104 +47,88 @@ const ReviewModal = ({ exchange, onClose, onSuccess }) => {
       });
 
       if (res.success) {
-        showNotification('Thank you! Review submitted successfully.', 'success');
+        success('Thank you! Your verified review has been submitted.');
         if (onSuccess) onSuccess(res.data);
         onClose();
       }
     } catch (err) {
-      const msg = err.response?.data?.message || 'Failed to submit review.';
-      showNotification(msg, 'error');
+      error(err.response?.data?.message || 'Failed to submit review.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-      <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl space-y-6 border border-gray-100 relative">
-        <button
-          onClick={onClose}
-          className="absolute top-5 right-5 p-1.5 text-gray-400 hover:text-gray-600 rounded-xl hover:bg-gray-100"
-        >
-          <X className="w-5 h-5" />
-        </button>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={`Review Exchange with ${partner.name}`}
+      subtitle={`Rate your experience swapping ${exchange.offeredSkill} ⇄ ${exchange.wantedSkill}.`}
+      footer={
+        <>
+          <Button variant="ghost" size="sm" onClick={onClose} disabled={loading}>
+            Cancel
+          </Button>
+          <Button
+            variant="coral"
+            size="md"
+            loading={loading}
+            icon={Star}
+            onClick={handleSubmit}
+          >
+            Submit Review
+          </Button>
+        </>
+      }
+    >
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Interactive Star Picker */}
+        <div className="p-4 bg-canvas-subtle border border-canvas-border rounded-card flex flex-col items-center justify-center space-y-2">
+          <span className="text-xs font-heading font-semibold text-ink-muted uppercase tracking-wider">
+            Select Rating (1 to 5 Stars)
+          </span>
 
-        <div className="text-center space-y-2">
-          <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center mx-auto mb-2">
-            <Award className="w-6 h-6" />
-          </div>
-          <h2 className="text-xl font-bold text-gray-900">Rate & Review {partner?.name}</h2>
-          <p className="text-xs text-gray-500 max-w-xs mx-auto">
-            Share feedback on your skill exchange session ({exchange?.offeredSkill} ⇄ {exchange?.wantedSkill}).
-          </p>
+          <RatingStars
+            rating={rating}
+            size="lg"
+            interactive={true}
+            onChange={(val) => setRating(val)}
+          />
+
+          <span className="text-xs font-heading font-bold text-ink-primary">
+            {rating === 5
+              ? '5.0 - Exceptional Exchange!'
+              : rating === 4
+              ? '4.0 - Very Helpful'
+              : rating === 3
+              ? '3.0 - Good Session'
+              : rating === 2
+              ? '2.0 - Needs Improvement'
+              : '1.0 - Unsatisfactory'}
+          </span>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Interactive Star Picker */}
-          <div className="flex flex-col items-center space-y-2">
-            <label className="text-xs font-semibold text-gray-700 uppercase tracking-wider">Rating Score</label>
-            <div className="flex items-center gap-2">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <button
-                  key={star}
-                  type="button"
-                  onClick={() => setRating(star)}
-                  onMouseEnter={() => setHoverRating(star)}
-                  onMouseLeave={() => setHoverRating(0)}
-                  className="p-1 transition-transform hover:scale-110 focus:outline-none"
-                >
-                  <Star
-                    className={`w-8 h-8 ${
-                      (hoverRating || rating) >= star
-                        ? 'text-amber-400 fill-amber-400'
-                        : 'text-gray-300'
-                    }`}
-                  />
-                </button>
-              ))}
-            </div>
-            <span className="text-xs font-bold text-amber-600">
-              {rating === 5 && 'Outstanding Exchange! (5 Stars)'}
-              {rating === 4 && 'Great Session! (4 Stars)'}
-              {rating === 3 && 'Average Session (3 Stars)'}
-              {rating === 2 && 'Below Expectations (2 Stars)'}
-              {rating === 1 && 'Poor Experience (1 Star)'}
-            </span>
+        {/* Written Feedback */}
+        <div>
+          <label className="block text-xs font-heading font-semibold text-ink-primary mb-1">
+            Written Feedback & Testimonial
+          </label>
+          <textarea
+            rows={4}
+            required
+            minLength={5}
+            maxLength={1000}
+            value={feedback}
+            onChange={(e) => setFeedback(e.target.value)}
+            placeholder={`Share what you learned from ${partner.name}, their teaching style, and communication...`}
+            className="w-full px-3 py-2 text-xs sm:text-sm bg-white border border-canvas-border rounded-input text-ink-primary focus-ring leading-relaxed resize-none"
+          />
+          <div className="flex justify-between text-[11px] text-ink-muted mt-1">
+            <span>Minimum 5 characters</span>
+            <span>{feedback.length}/1000</span>
           </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">Feedback / Review</label>
-            <textarea
-              rows={4}
-              required
-              value={feedback}
-              onChange={(e) => setFeedback(e.target.value)}
-              placeholder="What did you learn? How was your mentor's communication and teaching style?"
-              className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
-            />
-          </div>
-
-          <div className="pt-2 flex justify-end gap-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2.5 rounded-xl border border-gray-200 text-gray-600 text-sm font-semibold hover:bg-gray-50"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold shadow-md shadow-amber-100 flex items-center gap-2 disabled:opacity-50"
-            >
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Star className="w-4 h-4" />}
-              Submit Peer Review
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        </div>
+      </form>
+    </Modal>
   );
-};
-
-export default ReviewModal;
+}

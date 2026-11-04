@@ -2,10 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { getUserNotifications, markNotificationAsRead } from '../services/notificationService';
 import { useSocket } from '../context/SocketContext';
 import { useAuth } from '../context/AuthContext';
-import { Bell, Check, MessageSquare, Send, Calendar, Star, CheckCircle, X } from 'lucide-react';
+import { Bell, Check, MessageSquare, Send, Calendar, Star, CheckCircle, Sparkles, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-const NotificationDropdown = () => {
+export default function NotificationDropdown() {
   const { socket } = useSocket();
   const { user } = useAuth();
   const [notifications, setNotifications] = useState([]);
@@ -19,7 +19,7 @@ const NotificationDropdown = () => {
     }
   }, [user]);
 
-  // Real-time socket listener for new notifications
+  // Real-time socket listener for incoming notifications
   useEffect(() => {
     if (socket) {
       socket.on('new-notification', (notif) => {
@@ -33,7 +33,7 @@ const NotificationDropdown = () => {
     }
   }, [socket]);
 
-  // Click outside to close
+  // Click outside listener
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
@@ -81,82 +81,134 @@ const NotificationDropdown = () => {
     setIsOpen(false);
   };
 
+  const getNotificationIcon = (type) => {
+    switch (type) {
+      case 'new_message':
+        return {
+          icon: MessageSquare,
+          bg: 'bg-teach-bg text-teach-text border-teach-border',
+        };
+      case 'request_sent':
+        return {
+          icon: Send,
+          bg: 'bg-brand-coral-tint text-brand-coral border-[#FED7CE]',
+        };
+      case 'request_accepted':
+        return {
+          icon: CheckCircle,
+          bg: 'bg-status-success-bg text-status-success border-[#BBF7D0]',
+        };
+      case 'session_scheduled':
+        return {
+          icon: Calendar,
+          bg: 'bg-learn-bg text-learn-text border-learn-border',
+        };
+      case 'review_added':
+        return {
+          icon: Star,
+          bg: 'bg-learn-bg text-learn-text border-learn-border',
+        };
+      default:
+        return {
+          icon: Sparkles,
+          bg: 'bg-canvas-subtle text-ink-secondary border-canvas-border',
+        };
+    }
+  };
+
   return (
     <div className="relative" ref={dropdownRef}>
       <button
+        type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 text-gray-600 hover:text-indigo-600 hover:bg-gray-100 rounded-xl transition-colors"
-        title="Notifications"
+        className="relative p-2 rounded-button text-ink-secondary hover:text-ink-primary hover:bg-canvas-subtle transition-colors focus:outline-none focus:ring-2 focus:ring-brand-teal/20"
+        aria-label="View notifications"
       >
-        <Bell className="w-5 h-5" />
+        <Bell className="w-5 h-5" strokeWidth={1.75} />
         {unreadCount > 0 && (
-          <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-rose-500 text-white rounded-full text-[10px] font-extrabold flex items-center justify-center animate-pulse">
+          <span className="absolute top-1 right-1 w-4 h-4 bg-brand-coral text-white rounded-full text-[10px] font-heading font-bold flex items-center justify-center ring-2 ring-white">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-3xl shadow-2xl border border-gray-100 z-50 overflow-hidden animate-fade-in">
-          <div className="p-4 bg-slate-900 text-white flex items-center justify-between">
+        <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-canvas-card rounded-card shadow-elevated border border-canvas-border z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+          {/* Header */}
+          <div className="px-4 py-3 bg-white border-b border-canvas-border flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Bell className="w-4 h-4 text-indigo-400" />
-              <h3 className="font-bold text-sm">Notifications</h3>
+              <h3 className="font-heading font-bold text-sm text-ink-primary">
+                Notifications
+              </h3>
               {unreadCount > 0 && (
-                <span className="px-2 py-0.5 bg-indigo-600 text-white text-[10px] font-extrabold rounded-full">
-                  {unreadCount} New
+                <span className="px-2 py-0.5 bg-brand-coral-tint text-brand-coral border border-[#FED7CE] text-[10px] font-heading font-bold rounded-full">
+                  {unreadCount} new
                 </span>
               )}
             </div>
             {unreadCount > 0 && (
               <button
+                type="button"
                 onClick={handleMarkAllRead}
-                className="text-xs text-indigo-300 hover:text-white font-semibold flex items-center gap-1"
+                className="text-xs text-brand-teal hover:text-brand-teal-hover font-heading font-semibold flex items-center gap-1 transition-colors"
               >
-                <Check className="w-3.5 h-3.5" /> Mark All Read
+                <Check className="w-3.5 h-3.5" /> Mark all read
               </button>
             )}
           </div>
 
-          <div className="max-h-80 overflow-y-auto divide-y divide-gray-100">
+          {/* Notifications List */}
+          <div className="max-h-80 overflow-y-auto divide-y divide-canvas-border">
             {notifications.length === 0 ? (
-              <div className="p-8 text-center text-xs text-gray-400">
-                No notifications yet.
+              <div className="p-8 text-center text-xs text-ink-muted">
+                Nothing new right now. We will notify you when a swap updates!
               </div>
             ) : (
-              notifications.map((notif) => (
-                <Link
-                  key={notif._id}
-                  to={notif.link || '/dashboard'}
-                  onClick={() => handleNotificationClick(notif)}
-                  className={`p-3.5 block transition-colors ${
-                    !notif.isRead ? 'bg-indigo-50/50 hover:bg-indigo-50' : 'hover:bg-gray-50'
-                  }`}
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="p-2 rounded-xl bg-indigo-100 text-indigo-600 shrink-0 mt-0.5">
-                      {notif.type === 'new_message' && <MessageSquare className="w-4 h-4" />}
-                      {notif.type === 'request_sent' && <Send className="w-4 h-4" />}
-                      {notif.type === 'request_accepted' && <CheckCircle className="w-4 h-4 text-emerald-600" />}
-                      {notif.type === 'session_scheduled' && <Calendar className="w-4 h-4 text-purple-600" />}
-                      {notif.type === 'review_added' && <Star className="w-4 h-4 text-amber-500" />}
+              notifications.map((notif) => {
+                const iconConfig = getNotificationIcon(notif.type);
+                const IconComponent = iconConfig.icon;
+
+                return (
+                  <Link
+                    key={notif._id}
+                    to={notif.link || '/dashboard'}
+                    onClick={() => handleNotificationClick(notif)}
+                    className={`p-3.5 block transition-colors ${
+                      !notif.isRead
+                        ? 'bg-brand-teal-surface/50 hover:bg-brand-teal-surface'
+                        : 'hover:bg-canvas-subtle'
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div
+                        className={`w-8 h-8 rounded-lg border flex items-center justify-center shrink-0 mt-0.5 ${iconConfig.bg}`}
+                      >
+                        <IconComponent className="w-4 h-4" strokeWidth={1.75} />
+                      </div>
+                      <div className="space-y-0.5 flex-grow min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-xs font-heading font-semibold text-ink-primary truncate">
+                            {notif.title}
+                          </p>
+                          <span className="text-[10px] text-ink-muted flex-shrink-0">
+                            {new Date(notif.createdAt).toLocaleTimeString([], {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
+                          </span>
+                        </div>
+                        <p className="text-xs text-ink-secondary line-clamp-2 leading-relaxed">
+                          {notif.message}
+                        </p>
+                      </div>
                     </div>
-                    <div className="space-y-0.5 flex-grow">
-                      <p className="text-xs font-bold text-gray-900 leading-snug">{notif.title}</p>
-                      <p className="text-xs text-gray-600 leading-relaxed line-clamp-2">{notif.message}</p>
-                      <span className="text-[10px] text-gray-400 font-medium block pt-1">
-                        {new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                    </div>
-                  </div>
-                </Link>
-              ))
+                  </Link>
+                );
+              })
             )}
           </div>
         </div>
       )}
     </div>
   );
-};
-
-export default NotificationDropdown;
+}

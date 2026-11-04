@@ -1,67 +1,84 @@
 import React from 'react';
-import { Outlet, Link, useLocation } from 'react-router-dom';
+import { Outlet, NavLink, Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
-import { Shield, Users, Layers, Repeat, BarChart3 } from 'lucide-react';
+import { Shield, Users, Layers, Repeat, BarChart3, ArrowLeft } from 'lucide-react';
 
-const AdminLayout = () => {
-  const location = useLocation();
-
+export default function AdminLayout() {
   const adminTabs = [
-    { name: 'Overview', path: '/admin', icon: BarChart3 },
+    { name: 'Overview', path: '/admin', icon: BarChart3, end: true },
     { name: 'User Moderation', path: '/admin/users', icon: Users },
-    { name: 'Skill Categories', path: '/admin/skills', icon: Layers },
+    { name: 'Skill Catalog', path: '/admin/skills', icon: Layers },
     { name: 'Exchanges Audit', path: '/admin/exchanges', icon: Repeat },
   ];
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-900 text-slate-100">
+    <div className="min-h-screen flex flex-col bg-canvas text-ink-primary">
       <Navbar />
-      
-      {/* Admin Header Banner */}
-      <div className="bg-slate-800 border-b border-slate-700 py-6">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+
+      {/* Admin Top Header Banner in Deep Dark Teal */}
+      <div className="bg-brand-teal-dark text-white border-b border-white/10 py-5">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-amber-500/10 text-amber-400 rounded-xl border border-amber-500/20">
-              <Shield className="w-6 h-6" />
+            <div className="w-10 h-10 rounded-button bg-white/10 text-white flex items-center justify-center border border-white/15">
+              <Shield className="w-5 h-5" strokeWidth={1.75} />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-white">Administrative Portal</h1>
-              <p className="text-xs text-slate-400">Platform statistics, moderation & content administration</p>
+              <div className="flex items-center gap-2">
+                <h1 className="font-heading font-bold text-lg text-white">
+                  Administrative Portal
+                </h1>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-heading font-bold bg-brand-coral text-white">
+                  Admin Access
+                </span>
+              </div>
+              <p className="text-xs text-brand-teal-tint/80 mt-0.5">
+                Platform metrics, user moderation, catalog administration & exchange audits
+              </p>
             </div>
           </div>
 
-          {/* Admin Navigation Tabs */}
-          <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0">
-            {adminTabs.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = location.pathname === tab.path;
-              return (
-                <Link
-                  key={tab.path}
-                  to={tab.path}
-                  className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors ${
-                    isActive
-                      ? 'bg-indigo-600 text-white shadow-md'
-                      : 'bg-slate-700/60 text-slate-300 hover:bg-slate-700 hover:text-white'
-                  }`}
-                >
-                  <Icon className="w-4 h-4" />
-                  <span>{tab.name}</span>
-                </Link>
-              );
-            })}
+          <div className="flex items-center gap-2">
+            <Link
+              to="/dashboard"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-button text-xs font-heading font-semibold bg-white/10 hover:bg-white/20 text-white transition-colors"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" /> Return to User App
+            </Link>
           </div>
+        </div>
+
+        {/* Admin Navigation Tabs Strip */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4 pt-3 border-t border-white/10 flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+          {adminTabs.map((tab) => {
+            const Icon = tab.icon;
+            return (
+              <NavLink
+                key={tab.path}
+                to={tab.path}
+                end={tab.end}
+                className={({ isActive }) =>
+                  `flex items-center gap-2 px-3.5 py-1.5 rounded-button text-xs font-heading font-semibold whitespace-nowrap transition-colors ${
+                    isActive
+                      ? 'bg-white text-brand-teal-dark shadow-soft'
+                      : 'text-white/80 hover:bg-white/10 hover:text-white'
+                  }`
+                }
+              >
+                <Icon className="w-3.5 h-3.5" strokeWidth={1.75} />
+                <span>{tab.name}</span>
+              </NavLink>
+            );
+          })}
         </div>
       </div>
 
-      <main className="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Main Admin Content */}
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <Outlet />
       </main>
 
       <Footer />
     </div>
   );
-};
-
-export default AdminLayout;
+}

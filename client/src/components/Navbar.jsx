@@ -2,25 +2,25 @@ import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import NotificationDropdown from './NotificationDropdown';
-import { 
-  ArrowRightLeft, 
-  LayoutDashboard, 
-  Compass, 
-  Sparkles, 
-  Send, 
-  MessageSquare, 
-  Calendar, 
-  User, 
-  ShieldAlert, 
-  LogOut, 
-  Menu, 
-  X
+import Avatar from './ui/Avatar';
+import Button from './ui/Button';
+import {
+  Search,
+  LogOut,
+  User,
+  ShieldAlert,
+  Menu,
+  X,
+  Compass,
+  ArrowRightLeft,
 } from 'lucide-react';
 
-const Navbar = () => {
+export default function Navbar({ onToggleSidebar }) {
   const { user, isAuthenticated, isAdmin, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleLogout = () => {
@@ -28,170 +28,181 @@ const Navbar = () => {
     navigate('/login');
   };
 
-  const navLinks = isAuthenticated
-    ? [
-        { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-        { name: 'Discover', path: '/discover', icon: Compass },
-        { name: 'Matches', path: '/matches', icon: Sparkles },
-        { name: 'Requests', path: '/requests', icon: Send },
-        { name: 'Messages', path: '/messages', icon: MessageSquare },
-        { name: 'Sessions', path: '/sessions', icon: Calendar },
-        ...(isAdmin ? [{ name: 'Admin', path: '/admin', icon: ShieldAlert }] : []),
-      ]
-    : [];
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/discover?search=${encodeURIComponent(searchQuery.trim())}`);
+    } else {
+      navigate('/discover');
+    }
+  };
 
-  return (
-    <nav className="bg-white/80 backdrop-blur-md sticky top-0 z-40 border-b border-gray-100 shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16 items-center">
-          
-          {/* Logo */}
-          <Link to={isAuthenticated ? '/dashboard' : '/'} className="flex items-center gap-2.5 group">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white shadow-md shadow-indigo-200 group-hover:scale-105 transition-transform">
-              <ArrowRightLeft className="w-5 h-5" />
-            </div>
-            <span className="font-extrabold text-xl tracking-tight bg-gradient-to-r from-gray-900 via-indigo-950 to-indigo-700 bg-clip-text text-transparent">
-              SkillSwap
-            </span>
-          </Link>
-
-          {/* Desktop Navigation Links */}
-          {isAuthenticated && (
-            <div className="hidden md:flex items-center gap-1">
-              {navLinks.map((link) => {
-                const Icon = link.icon;
-                const isActive = location.pathname === link.path;
-                return (
-                  <Link
-                    key={link.path}
-                    to={link.path}
-                    className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      isActive
-                        ? 'bg-indigo-50 text-indigo-700'
-                        : 'text-gray-600 hover:text-indigo-600 hover:bg-gray-50'
-                    }`}
-                  >
-                    <Icon className="w-4 h-4" />
-                    <span>{link.name}</span>
-                  </Link>
-                );
-              })}
-            </div>
-          )}
-
-          {/* User Profile / Notifications / Auth Actions */}
-          <div className="hidden md:flex items-center gap-3">
-            {isAuthenticated ? (
-              <div className="flex items-center gap-3 pl-3 border-l border-gray-200">
-                <NotificationDropdown />
-                <Link
-                  to="/profile"
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
+  // If user is NOT authenticated (Public Topbar)
+  if (!isAuthenticated) {
+    return (
+      <header className="bg-canvas-card border-b border-canvas-border sticky top-0 z-40 shadow-soft">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between h-16 items-center">
+            {/* Brand Logo */}
+            <Link to="/" className="flex items-center gap-2.5 group focus:outline-none">
+              <div className="w-9 h-9 rounded-button bg-brand-teal flex items-center justify-center text-white shadow-soft group-hover:bg-brand-teal-hover transition-colors">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
                 >
-                  <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs uppercase border border-indigo-200">
-                    {user?.name ? user.name.slice(0, 2) : 'U'}
-                  </div>
-                  <span className="max-w-[120px] truncate">{user?.name}</span>
-                </Link>
-                <button
-                  onClick={handleLogout}
-                  className="p-2 text-gray-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
-                  title="Logout"
-                >
-                  <LogOut className="w-5 h-5" />
-                </button>
+                  <path d="M4 8h13m0 0l-4-4m4 4l-4 4" />
+                  <path d="M20 16H7m0 0l4-4m-4 4l4 4" />
+                </svg>
               </div>
-            ) : (
-              <div className="flex items-center gap-3">
-                <Link
-                  to="/login"
-                  className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-indigo-600 transition-colors"
-                >
-                  Log In
-                </Link>
-                <Link
-                  to="/register"
-                  className="px-4 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm shadow-indigo-200 transition-colors"
-                >
-                  Get Started
-                </Link>
-              </div>
-            )}
-          </div>
+              <span className="font-heading font-bold text-xl tracking-tight text-ink-primary">
+                Skill<span className="text-brand-teal">Swap</span>
+              </span>
+            </Link>
 
-          {/* Mobile menu button */}
-          <div className="flex items-center md:hidden gap-2">
-            {isAuthenticated && <NotificationDropdown />}
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 rounded-lg text-gray-600 hover:bg-gray-100 focus:outline-none"
-            >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
-          </div>
+            {/* Public Links */}
+            <nav className="hidden sm:flex items-center gap-6">
+              <Link
+                to="/discover"
+                className="text-sm font-heading font-medium text-ink-secondary hover:text-brand-teal transition-colors"
+              >
+                Browse Skills
+              </Link>
+            </nav>
 
-        </div>
-      </div>
-
-      {/* Mobile Drawer */}
-      {mobileMenuOpen && (
-        <div className="md:hidden border-b border-gray-200 bg-white px-4 pt-2 pb-4 space-y-1">
-          {isAuthenticated ? (
-            <>
-              {navLinks.map((link) => {
-                const Icon = link.icon;
-                return (
-                  <Link
-                    key={link.path}
-                    to={link.path}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-base font-medium text-gray-700 hover:bg-indigo-50 hover:text-indigo-600"
-                  >
-                    <Icon className="w-5 h-5" />
-                    <span>{link.name}</span>
-                  </Link>
-                );
-              })}
-              <div className="pt-3 mt-2 border-t border-gray-100 flex items-center justify-between">
-                <Link
-                  to="/profile"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-2 font-medium text-gray-700"
-                >
-                  <User className="w-5 h-5 text-indigo-600" />
-                  <span>Profile Settings</span>
-                </Link>
-                <button
-                  onClick={handleLogout}
-                  className="flex items-center gap-1 text-sm font-medium text-rose-600"
-                >
-                  <LogOut className="w-4 h-4" />
-                  Logout
-                </button>
-              </div>
-            </>
-          ) : (
-            <div className="flex flex-col gap-2 pt-2">
+            {/* Auth Actions */}
+            <div className="flex items-center gap-3">
               <Link
                 to="/login"
-                onClick={() => setMobileMenuOpen(false)}
-                className="w-full text-center py-2.5 rounded-lg text-gray-700 bg-gray-100 font-medium"
+                className="text-sm font-heading font-medium text-ink-secondary hover:text-ink-primary px-3 py-2 rounded-button hover:bg-canvas-subtle transition-colors"
               >
-                Log In
+                Sign In
               </Link>
+              <Link to="/register">
+                <Button variant="coral" size="sm">
+                  Get Started Free
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </header>
+    );
+  }
+
+  // Authenticated Top Bar
+  return (
+    <header className="bg-canvas-card border-b border-canvas-border sticky top-0 z-30 h-16 flex items-center px-4 sm:px-6 justify-between">
+      {/* Left: Mobile sidebar toggle & Global Search */}
+      <div className="flex items-center gap-3 flex-1 max-w-md">
+        {onToggleSidebar && (
+          <button
+            type="button"
+            onClick={onToggleSidebar}
+            className="md:hidden p-2 rounded-button text-ink-secondary hover:bg-canvas-subtle focus:outline-none"
+            aria-label="Toggle Navigation"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+        )}
+
+        {/* Global Search Input */}
+        <form onSubmit={handleSearchSubmit} className="relative w-full">
+          <Search className="w-4 h-4 text-ink-muted absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <input
+            type="text"
+            placeholder="Search skills, users, topics..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 text-xs sm:text-sm bg-canvas-subtle/70 border border-canvas-border rounded-button text-ink-primary placeholder-ink-muted focus-ring transition-colors"
+          />
+        </form>
+      </div>
+
+      {/* Right Controls: Notifications & User Avatar Dropdown */}
+      <div className="flex items-center gap-3 ml-4">
+        {/* Real-Time Notification Bell */}
+        <NotificationDropdown />
+
+        {/* User Profile Menu */}
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+            className="flex items-center gap-2.5 p-1 rounded-full hover:bg-canvas-subtle transition-colors focus:outline-none focus:ring-2 focus:ring-brand-teal/20"
+            aria-label="User menu"
+          >
+            <Avatar
+              src={user?.avatar}
+              name={user?.name}
+              id={user?._id}
+              size="sm"
+            />
+            <span className="hidden lg:block text-xs font-heading font-semibold text-ink-primary max-w-[120px] truncate">
+              {user?.name || 'My Account'}
+            </span>
+          </button>
+
+          {/* User Menu Dropdown */}
+          {userDropdownOpen && (
+            <div
+              className="absolute right-0 mt-2 w-56 bg-canvas-card rounded-card shadow-elevated border border-canvas-border z-50 overflow-hidden py-1.5 animate-in fade-in zoom-in-95 duration-150"
+              onClick={() => setUserDropdownOpen(false)}
+            >
+              <div className="px-4 py-2.5 border-b border-canvas-border bg-canvas-subtle/50">
+                <div className="font-heading font-bold text-xs text-ink-primary truncate">
+                  {user?.name}
+                </div>
+                <div className="text-[11px] text-ink-muted truncate">
+                  {user?.email}
+                </div>
+              </div>
+
               <Link
-                to="/register"
-                onClick={() => setMobileMenuOpen(false)}
-                className="w-full text-center py-2.5 rounded-lg text-white bg-indigo-600 font-semibold"
+                to="/profile"
+                className="flex items-center gap-2.5 px-4 py-2 text-xs font-heading font-medium text-ink-primary hover:bg-canvas-subtle transition-colors"
               >
-                Register Now
+                <User className="w-4 h-4 text-ink-secondary" />
+                <span>My Profile & Skills</span>
               </Link>
+
+              <Link
+                to="/discover"
+                className="flex items-center gap-2.5 px-4 py-2 text-xs font-heading font-medium text-ink-primary hover:bg-canvas-subtle transition-colors"
+              >
+                <Compass className="w-4 h-4 text-ink-secondary" />
+                <span>Explore Directory</span>
+              </Link>
+
+              {isAdmin && (
+                <Link
+                  to="/admin"
+                  className="flex items-center gap-2.5 px-4 py-2 text-xs font-heading font-medium text-brand-coral hover:bg-brand-coral-tint/60 transition-colors"
+                >
+                  <ShieldAlert className="w-4 h-4" />
+                  <span>Administrative Portal</span>
+                </Link>
+              )}
+
+              <div className="border-t border-canvas-border my-1" />
+
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-heading font-medium text-status-danger hover:bg-status-danger-bg/40 transition-colors text-left"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Sign Out</span>
+              </button>
             </div>
           )}
         </div>
-      )}
-    </nav>
+      </div>
+    </header>
   );
-};
-
-export default Navbar;
+}

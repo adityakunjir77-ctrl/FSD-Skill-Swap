@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { SocketProvider } from './context/SocketContext';
 import { NotificationProvider } from './context/NotificationContext';
+import { ToastProvider } from './components/ui/Toast';
 
 // Layouts
 import MainLayout from './layouts/MainLayout';
@@ -28,8 +29,8 @@ const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+      <div className="min-h-screen flex items-center justify-center bg-canvas">
+        <div className="w-9 h-9 border-3 border-brand-teal border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -41,8 +42,8 @@ const AdminRoute = ({ children }) => {
   const { isAuthenticated, isAdmin, loading } = useAuth();
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-900">
-        <div className="w-10 h-10 border-4 border-amber-400 border-t-transparent rounded-full animate-spin"></div>
+      <div className="min-h-screen flex items-center justify-center bg-brand-teal-dark">
+        <div className="w-9 h-9 border-3 border-brand-coral border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -78,6 +79,7 @@ function AppRoutes() {
         <Route path="/messages" element={<MessagesPage />} />
         <Route path="/sessions" element={<SessionsPage />} />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/profile/:id" element={<ProfilePage />} />
       </Route>
 
       {/* Protected Admin Routes inside Admin Layout */}
@@ -107,9 +109,11 @@ function App() {
     <AuthProvider>
       <SocketProvider>
         <NotificationProvider>
-          <Router>
-            <AppRoutes />
-          </Router>
+          <ToastProvider>
+            <Router>
+              <AppRoutes />
+            </Router>
+          </ToastProvider>
         </NotificationProvider>
       </SocketProvider>
     </AuthProvider>

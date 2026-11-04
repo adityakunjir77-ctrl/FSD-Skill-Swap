@@ -2,6 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { getRecommendedMatches } from '../services/skillService';
 import { getUserSessions } from '../services/sessionService';
+import { getUserExchanges } from '../services/exchangeService';
+import { Link, useNavigate } from 'react-router-dom';
+import SwapCard from '../components/ui/SwapCard';
+import StatTile from '../components/ui/StatTile';
+import Button from '../components/ui/Button';
+import Pill from '../components/ui/Pill';
+import Avatar from '../components/ui/Avatar';
+import Skeleton from '../components/ui/Skeleton';
+import EmptyState from '../components/ui/EmptyState';
+import SendExchangeModal from '../components/SendExchangeModal';
 import {
   Sparkles,
   ArrowRightLeft,
@@ -10,18 +20,23 @@ import {
   Star,
   CheckCircle,
   Clock,
-  User,
-  MapPin,
-  Loader2,
-  ChevronRight,
+  Compass,
+  ArrowRight,
+  AlertCircle,
+  Plus,
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
 
-const DashboardPage = () => {
+export default function DashboardPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
+
   const [matches, setMatches] = useState([]);
   const [sessions, setSessions] = useState([]);
+  const [pendingRequests, setPendingRequests] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Modal
+  const [exchangePartnerModal, setExchangePartnerModal] = useState(null);
 
   useEffect(() => {
     fetchDashboardData();
@@ -30,221 +45,336 @@ const DashboardPage = () => {
   const fetchDashboardData = async () => {
     setLoading(true);
     try {
-      const [matchesRes, sessionsRes] = await Promise.all([
+      const [matchesRes, sessionsRes, requestsRes] = await Promise.all([
         getRecommendedMatches(),
         getUserSessions(),
+        getUserExchanges(),
       ]);
-      if (matchesRes.success) setMatches(matchesRes.data.slice(0, 3));
-      if (sessionsRes.success) setSessions(sessionsRes.data.slice(0, 3));
+
+      if (matchesRes.success) {
+        setMatches(matchesRes.data.slice(0, 3));
+      }
+      if (sessionsRes.success) {
+        setSessions(sessionsRes.data.slice(0, 4));
+      }
+      if (requestsRes.success) {
+        // Pending received requests waiting for user's action
+        const pending = (requestsRes.data.received || []).filter(
+          (r) => r.status === 'Pending'
+        );
+        setPendingRequests(pending.slice(0, 3));
+      }
     } catch (err) {
-      console.error('Failed to load dashboard data', err);
+      console.error('[Dashboard] Error fetching dashboard data:', err);
     } finally {
       setLoading(false);
     }
   };
 
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 18) return 'Good afternoon';
+    return 'Good evening';
+  };
+
+  const completedExchanges = user?.completedExchanges || 0;
+  const ratingValue = user?.averageRating ? user.averageRating.toFixed(1) : '5.0';
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-      {/* Welcome Banner */}
-      <div className="bg-gradient-to-r from-indigo-900 via-indigo-800 to-purple-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-80 h-80 bg-white/5 rounded-full blur-2xl pointer-events-none"></div>
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div>
-            <span className="px-3 py-1 bg-white/10 rounded-full text-xs font-semibold text-indigo-200 tracking-wider uppercase border border-white/10">
-              User Dashboard
-            </span>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white mt-2">
-              Welcome back, {user?.name || 'SkillSwapper'}! 👋
-            </h1>
-            <p className="text-indigo-200 text-sm mt-1 max-w-xl">
-              Ready to learn something new today or share your expertise with a fellow peer?
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-3">
-            <Link
-              to="/matches"
-              className="px-5 py-2.5 rounded-xl bg-white text-indigo-900 font-bold text-sm hover:bg-indigo-50 shadow-lg transition-all flex items-center gap-2"
-            >
-              <Sparkles className="w-4 h-4 text-indigo-600" />
-              Find Recommended Matches
-            </Link>
-          </div>
+    <div className="space-y-6">
+      {/* 1. GREETING HEADER */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-canvas-border">
+        <div>
+          <h1 className="font-heading font-bold text-2xl sm:text-3xl text-ink-primary">
+            {getGreeting()}, {user?.name?.split(' ')[0] || 'Friend'}
+          </h1>
+          <p className="text-xs sm:text-sm text-ink-secondary mt-1">
+            Here is your skill exchange activity and reciprocal matches for today.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2.5">
+          <Link to="/discover">
+            <Button variant="secondary" size="sm" icon={Compass}>
+              Explore Directory
+            </Button>
+          </Link>
+          <Link to="/matches">
+            <Button variant="coral" size="sm" icon={Sparkles}>
+              Find Matches
+            </Button>
+          </Link>
         </div>
       </div>
 
-      {/* Quick Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        {[
-          {
-            label: 'Skills Offered',
-            val: user?.skillsOffered?.length || 0,
-            icon: ArrowRightLeft,
-            color: 'text-indigo-600',
-            bg: 'bg-indigo-50',
-          },
-          {
-            label: 'Skills Wanted',
-            val: user?.skillsWanted?.length || 0,
-            icon: Sparkles,
-            color: 'text-purple-600',
-            bg: 'bg-purple-50',
-          },
-          {
-            label: 'Completed Exchanges',
-            val: user?.completedExchanges || 0,
-            icon: CheckCircle,
-            color: 'text-emerald-600',
-            bg: 'bg-emerald-50',
-          },
-          {
-            label: 'Average Rating',
-            val: user?.averageRating ? `${user.averageRating.toFixed(1)} ★` : '5.0 ★',
-            icon: Star,
-            color: 'text-amber-500',
-            bg: 'bg-amber-50',
-          },
-        ].map((stat, idx) => {
-          const Icon = stat.icon;
-          return (
-            <div
-              key={idx}
-              className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between"
-            >
-              <div>
-                <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">{stat.label}</p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">{stat.val}</p>
-              </div>
-              <div className={`p-3 rounded-xl ${stat.bg} ${stat.color}`}>
-                <Icon className="w-6 h-6" />
-              </div>
-            </div>
-          );
-        })}
+      {/* 2. COMPACT STAT STRIP */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
+        <StatTile
+          label="Skills Offered"
+          value={user?.skillsOffered?.length || 0}
+          icon={ArrowRightLeft}
+          variant="default"
+          onClick={() => navigate('/profile')}
+        />
+        <StatTile
+          label="Skills Wanted"
+          value={user?.skillsWanted?.length || 0}
+          icon={Sparkles}
+          variant="amber"
+          onClick={() => navigate('/profile')}
+        />
+        <StatTile
+          label="Pending Inbox"
+          value={pendingRequests.length}
+          icon={Send}
+          variant={pendingRequests.length > 0 ? 'coral' : 'default'}
+          onClick={() => navigate('/requests')}
+        />
+        <StatTile
+          label="Completed Swaps"
+          value={completedExchanges}
+          icon={CheckCircle}
+          variant="success"
+        />
+        <StatTile
+          label="Reputation"
+          value={`${ratingValue} ★`}
+          icon={Star}
+          variant="amber"
+          subtext={`(${user?.totalReviews || 0} reviews)`}
+        />
       </div>
 
-      {/* Dynamic Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Recommended Matches Section */}
-        <div className="lg:col-span-2 bg-white rounded-2xl p-6 border border-gray-100 shadow-sm space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-indigo-600" /> Top Recommended Matches
-            </h3>
-            <Link to="/matches" className="text-xs font-semibold text-indigo-600 hover:underline">
-              View All Matches →
-            </Link>
-          </div>
+      {/* 3. MAIN DASHBOARD SPLIT GRID: Left (Matches + Attention) | Right (Sessions + Actions) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* Left Column (8 cols): Matches & Attention */}
+        <div className="lg:col-span-8 space-y-6">
+          {/* NEEDS YOUR ATTENTION (if any pending requests) */}
+          {pendingRequests.length > 0 && (
+            <div className="bg-canvas-card border border-[#FED7CE] rounded-card p-5 shadow-soft">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2 text-brand-coral font-heading font-semibold text-sm">
+                  <AlertCircle className="w-4 h-4" />
+                  <span>Needs your reply ({pendingRequests.length})</span>
+                </div>
+                <Link
+                  to="/requests"
+                  className="text-xs font-heading font-semibold text-brand-teal hover:underline"
+                >
+                  View all requests →
+                </Link>
+              </div>
 
-          {loading ? (
-            <div className="py-12 text-center">
-              <Loader2 className="w-6 h-6 text-indigo-600 animate-spin mx-auto mb-2" />
-              <p className="text-xs text-gray-500">Calculating reciprocal compatibility...</p>
-            </div>
-          ) : matches.length === 0 ? (
-            <div className="p-8 text-center bg-gray-50 rounded-xl border border-dashed border-gray-200">
-              <Sparkles className="w-8 h-8 text-indigo-400 mx-auto mb-2" />
-              <p className="text-sm font-semibold text-gray-700">No Direct Matches Yet</p>
-              <p className="text-xs text-gray-500 max-w-sm mx-auto mt-1">
-                Add skills to your profile to get automatically matched with peers!
-              </p>
-              <Link
-                to="/profile"
-                className="inline-block mt-4 text-xs font-bold text-white bg-indigo-600 px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
-              >
-                Update Skills Profile
-              </Link>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {matches.map((item) => {
-                const partner = item.user;
-                return (
+              <div className="space-y-2.5">
+                {pendingRequests.map((req) => (
                   <div
-                    key={partner._id}
-                    className="p-4 rounded-xl border border-gray-100 hover:border-indigo-100 hover:bg-indigo-50/20 transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+                    key={req._id}
+                    className="p-3 bg-white border border-canvas-border rounded-button flex items-center justify-between gap-3 text-xs"
                   >
-                    <div className="flex items-center gap-3">
-                      <img
-                        src={partner.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${partner.name}`}
-                        alt={partner.name}
-                        className="w-10 h-10 rounded-full bg-gray-100 object-cover"
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <Avatar
+                        src={req.sender?.avatar}
+                        name={req.sender?.name}
+                        id={req.sender?._id}
+                        size="sm"
                       />
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <p className="text-sm font-bold text-gray-900">{partner.name}</p>
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">
-                            {item.score}% Match
+                      <div className="min-w-0">
+                        <span className="font-semibold text-ink-primary">
+                          {req.sender?.name}
+                        </span>{' '}
+                        <span className="text-ink-secondary">
+                          wants to swap{' '}
+                          <span className="font-medium text-teach-text">
+                            {req.offeredSkill}
+                          </span>{' '}
+                          for your{' '}
+                          <span className="font-medium text-learn-text">
+                            {req.wantedSkill}
                           </span>
-                        </div>
-                        <p className="text-xs text-gray-500 mt-0.5">
-                          Teaches: <span className="font-semibold text-indigo-600">{item.theyCanTeach?.join(', ') || 'Various skills'}</span>
-                        </p>
+                        </span>
                       </div>
                     </div>
-                    <Link
-                      to="/matches"
-                      className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold whitespace-nowrap transition-colors flex items-center gap-1 self-end sm:self-center"
-                    >
-                      Connect <ChevronRight className="w-3.5 h-3.5" />
+
+                    <Link to="/requests">
+                      <Button variant="primary" size="sm">
+                        Respond
+                      </Button>
                     </Link>
                   </div>
-                );
-              })}
+                ))}
+              </div>
             </div>
           )}
-        </div>
 
-        {/* Upcoming Sessions Section */}
-        <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-purple-600" /> Upcoming Sessions
-            </h3>
-            <Link to="/sessions" className="text-xs font-semibold text-indigo-600 hover:underline">
-              View All
-            </Link>
-          </div>
+          {/* BEST MATCHES */}
+          <div className="bg-canvas-card border border-canvas-border rounded-card p-5 shadow-soft">
+            <div className="flex items-center justify-between pb-4 border-b border-canvas-border mb-4">
+              <div>
+                <h2 className="font-heading font-bold text-base text-ink-primary flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-brand-teal" />
+                  Your Best Reciprocal Matches
+                </h2>
+                <p className="text-xs text-ink-secondary mt-0.5">
+                  Complementary peers paired automatically by your skill preferences.
+                </p>
+              </div>
 
-          {loading ? (
-            <div className="py-12 text-center">
-              <Loader2 className="w-6 h-6 text-purple-600 animate-spin mx-auto mb-2" />
-              <p className="text-xs text-gray-500">Checking scheduled dates...</p>
-            </div>
-          ) : sessions.length === 0 ? (
-            <div className="p-6 text-center bg-gray-50 rounded-xl border border-dashed border-gray-200">
-              <Calendar className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-              <p className="text-xs text-gray-500">No upcoming sessions scheduled.</p>
               <Link
-                to="/requests"
-                className="inline-block mt-3 text-xs font-semibold text-indigo-600 hover:underline"
+                to="/matches"
+                className="text-xs font-heading font-semibold text-brand-teal hover:text-brand-teal-hover flex items-center gap-1"
               >
-                Schedule via Accepted Requests →
+                All Matches <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>
-          ) : (
-            <div className="space-y-3">
-              {sessions.map((ses) => (
-                <div
-                  key={ses._id}
-                  className="p-3.5 rounded-xl border border-gray-100 bg-gray-50/50 space-y-2"
-                >
-                  <p className="text-xs font-bold text-gray-900">{ses.topic}</p>
-                  <div className="flex items-center justify-between text-[11px] text-gray-500">
-                    <span className="flex items-center gap-1">
-                      <Calendar className="w-3.5 h-3.5 text-indigo-500" /> {ses.date}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-3.5 h-3.5 text-purple-500" /> {ses.time}
-                    </span>
-                  </div>
-                </div>
-              ))}
+
+            {loading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Skeleton variant="card" count={2} />
+              </div>
+            ) : matches.length === 0 ? (
+              <EmptyState
+                title="No direct matches calculated yet"
+                description="Add the skills you offer and want to learn on your profile to unlock instant reciprocal pairings."
+                actionLabel="Update My Skills Profile"
+                onAction={() => navigate('/profile')}
+              />
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {matches.slice(0, 2).map((item, idx) => (
+                  <SwapCard
+                    key={item.user?._id || idx}
+                    currentUser={user}
+                    partnerUser={item.user}
+                    compatibilityScore={item.score}
+                    isReciprocal={item.isReciprocal}
+                    isBestMatch={idx === 0}
+                    youCanTeach={item.youCanTeach}
+                    theyCanTeach={item.theyCanTeach}
+                    onProposeSwap={(partner) => setExchangePartnerModal(partner)}
+                    onViewProfile={(partner) => navigate(`/profile/${partner._id}`)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Right Column (4 cols): Upcoming Sessions & Quick Actions */}
+        <div className="lg:col-span-4 space-y-6">
+          {/* UPCOMING SESSIONS */}
+          <div className="bg-canvas-card border border-canvas-border rounded-card p-5 shadow-soft">
+            <div className="flex items-center justify-between pb-3 border-b border-canvas-border mb-3">
+              <h2 className="font-heading font-bold text-sm text-ink-primary flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-brand-teal" />
+                Upcoming Sessions
+              </h2>
+              <Link
+                to="/sessions"
+                className="text-xs font-heading font-semibold text-brand-teal hover:underline"
+              >
+                View Agenda
+              </Link>
             </div>
-          )}
+
+            {loading ? (
+              <Skeleton variant="text" count={3} />
+            ) : sessions.length === 0 ? (
+              <div className="py-6 text-center text-xs text-ink-muted">
+                <Calendar className="w-8 h-8 text-canvas-border-dark mx-auto mb-2" strokeWidth={1.5} />
+                No learning sessions booked yet.
+                <div className="mt-2">
+                  <Link
+                    to="/requests"
+                    className="text-brand-teal font-semibold hover:underline"
+                  >
+                    Schedule via accepted requests →
+                  </Link>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2.5">
+                {sessions.map((ses) => (
+                  <div
+                    key={ses._id}
+                    className="p-3 bg-canvas-subtle/70 border border-canvas-border rounded-button text-xs"
+                  >
+                    <div className="font-heading font-semibold text-ink-primary truncate">
+                      {ses.topic}
+                    </div>
+                    <div className="flex items-center justify-between mt-1 text-ink-secondary text-[11px]">
+                      <span className="flex items-center gap-1">
+                        <Clock className="w-3 h-3 text-brand-teal" />
+                        {ses.date} at {ses.time}
+                      </span>
+                      <Pill
+                        variant={ses.status === 'Accepted' ? 'success' : 'neutral'}
+                        size="xs"
+                      >
+                        {ses.status}
+                      </Pill>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* QUICK ACTIONS CARD */}
+          <div className="bg-canvas-card border border-canvas-border rounded-card p-5 shadow-soft">
+            <h2 className="font-heading font-bold text-sm text-ink-primary mb-3">
+              Quick Shortcuts
+            </h2>
+            <div className="space-y-2">
+              <Link
+                to="/discover"
+                className="w-full flex items-center justify-between p-2.5 rounded-button bg-canvas-subtle hover:bg-canvas-border/50 text-xs font-heading font-semibold text-ink-primary transition-colors"
+              >
+                <div className="flex items-center gap-2.5">
+                  <Compass className="w-4 h-4 text-brand-teal" />
+                  <span>Search Skill Catalog</span>
+                </div>
+                <ArrowRight className="w-3.5 h-3.5 text-ink-muted" />
+              </Link>
+
+              <Link
+                to="/matches"
+                className="w-full flex items-center justify-between p-2.5 rounded-button bg-canvas-subtle hover:bg-canvas-border/50 text-xs font-heading font-semibold text-ink-primary transition-colors"
+              >
+                <div className="flex items-center gap-2.5">
+                  <Sparkles className="w-4 h-4 text-brand-coral" />
+                  <span>Review Compatibility Scores</span>
+                </div>
+                <ArrowRight className="w-3.5 h-3.5 text-ink-muted" />
+              </Link>
+
+              <Link
+                to="/profile"
+                className="w-full flex items-center justify-between p-2.5 rounded-button bg-canvas-subtle hover:bg-canvas-border/50 text-xs font-heading font-semibold text-ink-primary transition-colors"
+              >
+                <div className="flex items-center gap-2.5">
+                  <Plus className="w-4 h-4 text-brand-teal" />
+                  <span>Add Skills to Profile</span>
+                </div>
+                <ArrowRight className="w-3.5 h-3.5 text-ink-muted" />
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
+
+      {/* Propose Swap Modal */}
+      {exchangePartnerModal && (
+        <SendExchangeModal
+          isOpen={Boolean(exchangePartnerModal)}
+          onClose={() => setExchangePartnerModal(null)}
+          partnerUser={exchangePartnerModal}
+          onSuccess={() => {
+            setExchangePartnerModal(null);
+            fetchDashboardData();
+          }}
+        />
+      )}
     </div>
   );
-};
-
-export default DashboardPage;
+}
