@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const bcrypt = require('bcryptjs');
+const { isDemoDataEnabled } = require('./config/env');
 
 // Load environment variables
 dotenv.config();
@@ -17,6 +18,10 @@ const Notification = require('./models/Notification');
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/skillswap';
 
 const seedDatabase = async (clearFirst = true) => {
+  if (!isDemoDataEnabled()) {
+    throw new Error('Seeding wipes data and creates accounts with public passwords. It requires ENABLE_DEMO_DATA=true and is disabled when NODE_ENV=production.');
+  }
+
   try {
     if (clearFirst) {
       console.log('[SkillSwap Seeder] Clearing existing records...');
@@ -324,7 +329,7 @@ const seedDatabase = async (clearFirst = true) => {
 if (require.main === module) {
   (async () => {
     try {
-      console.log('[SkillSwap Seeder] Connecting to MongoDB at:', MONGO_URI);
+      console.log('[SkillSwap Seeder] Connecting to MongoDB...');
       await mongoose.connect(MONGO_URI);
       console.log('[SkillSwap Seeder] Connected successfully.');
       await seedDatabase(true);

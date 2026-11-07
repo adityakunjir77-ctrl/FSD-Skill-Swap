@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { isDemoDataEnabled } = require('./env');
 
 let mongoMemoryServerInstance = null;
 
@@ -12,16 +13,25 @@ const connectDB = async () => {
     });
     console.log(`[MongoDB] Connected successfully to host: ${conn.connection.host}`);
 
-    // If database is empty, automatically seed initial demo data
-    const User = require('../models/User');
-    const userCount = await User.countDocuments();
-    if (userCount === 0) {
-      console.log('[MongoDB] Empty database detected. Auto-seeding initial demo records...');
-      const seedDatabase = require('../seed');
-      await seedDatabase(false);
+    // If demo data is enabled and the database is empty, seed initial demo data
+    if (isDemoDataEnabled()) {
+      const User = require('../models/User');
+      const userCount = await User.countDocuments();
+      if (userCount === 0) {
+        console.log('[MongoDB] Empty database detected. Auto-seeding initial demo records...');
+        const seedDatabase = require('../seed');
+        await seedDatabase(false);
+      }
     }
   } catch (error) {
-    console.warn(`[MongoDB] Primary connection to ${uri} failed: ${error.message}`);
+    console.warn(`[MongoDB] Primary connection failed: ${error.message}`);
+
+    // The embedded database is demo-only, so never swap it in for a real one
+    if (!isDemoDataEnabled()) {
+      console.error('[MongoDB] Fatal: no database available. Set ENABLE_DEMO_DATA=true to use the embedded development database.');
+      process.exit(1);
+    }
+
     console.log('[MongoDB] Starting built-in embedded in-memory MongoDB engine...');
 
     try {
@@ -45,9 +55,7 @@ const connectDB = async () => {
       });
     } catch (memErr) {
       console.error('[MongoDB] Fatal error initializing embedded database:', memErr.message);
-      if (process.env.NODE_ENV === 'production') {
-        process.exit(1);
-      }
+      process.exit(1);
     }
   }
 };

@@ -48,7 +48,6 @@ export default function ScheduleSessionModal({
     try {
       const res = await createSession({
         exchangeId: exchange._id,
-        partnerId: partner._id,
         topic: formData.topic.trim(),
         date: formData.date,
         time: formData.time,

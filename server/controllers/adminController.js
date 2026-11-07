@@ -3,6 +3,12 @@ const Skill = require('../models/Skill');
 const ExchangeRequest = require('../models/ExchangeRequest');
 const Review = require('../models/Review');
 const { successResponse, errorResponse } = require('../utils/apiResponse');
+const { SEARCH_TIMEOUT_MS, toSearchPattern } = require('../utils/sanitize');
+
+// Drops live sockets, which would otherwise keep receiving after the account is closed
+const disconnectUserSockets = (req, userId) => {
+  req.io.in(`user_${userId}`).disconnectSockets(true);
+};
 
 // @desc    Get administrative dashboard statistics
 // @route   GET /api/admin/stats
@@ -43,14 +49,14 @@ const getAdminStats = async (req, res, next) => {
 // @access  Private/Admin
 const getAdminUsers = async (req, res, next) => {
   try {
-    const { search } = req.query;
-    let query = {};
+    const searchPattern = toSearchPattern(req.query.search);
+    const query = {};
 
-    if (search) {
+    if (searchPattern) {
       query.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } },
-        { location: { $regex: search, $options: 'i' } },
+        { name: { $regex: searchPattern, $options: 'i' } },
+        { email: { $regex: searchPattern, $options: 'i' } },
+        { location: { $regex: searchPattern, $options: 'i' } },
       ];
     }
 
@@ -58,7 +64,8 @@ const getAdminUsers = async (req, res, next) => {
       .select('-password')
       .populate('skillsOffered')
       .populate('skillsWanted')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .maxTimeMS(SEARCH_TIMEOUT_MS);
 
     return successResponse(res, 200, 'Admin users list retrieved', users);
   } catch (error) {
@@ -81,8 +88,16 @@ const toggleUserStatus = async (req, res, next) => {
       return errorResponse(res, 400, 'Admin cannot suspend their own account.');
     }
 
+    if (user.role === 'admin') {
+      return errorResponse(res, 403, 'Administrator accounts cannot be suspended.');
+    }
+
     user.isActive = !user.isActive;
     await user.save();
+
+    if (!user.isActive) {
+      disconnectUserSockets(req, user._id);
+    }
 
     return successResponse(
       res,
@@ -110,7 +125,12 @@ const deleteUser = async (req, res, next) => {
       return errorResponse(res, 400, 'Admin cannot delete their own account.');
     }
 
+    if (user.role === 'admin') {
+      return errorResponse(res, 403, 'Administrator accounts cannot be deleted.');
+    }
+
     await User.findByIdAndDelete(req.params.id);
+    disconnectUserSockets(req, user._id);
     return successResponse(res, 200, 'User account deleted successfully');
   } catch (error) {
     next(error);

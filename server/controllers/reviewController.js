@@ -4,6 +4,8 @@ const User = require('../models/User');
 const Notification = require('../models/Notification');
 const { successResponse, errorResponse } = require('../utils/apiResponse');
 
+const MAX_PUBLIC_REVIEWS = 100;
+
 // @desc    Submit a rating and review for a completed exchange
 // @route   POST /api/reviews
 // @access  Private
@@ -12,7 +14,9 @@ const createReview = async (req, res, next) => {
     const { exchangeId, rating, feedback } = req.body;
     const reviewerId = req.user._id;
 
-    if (!exchangeId || !rating || !feedback) {
+    const stars = Number(rating);
+
+    if (!exchangeId || !Number.isInteger(stars) || stars < 1 || stars > 5 || typeof feedback !== 'string' || !feedback.trim()) {
       return errorResponse(res, 400, 'Exchange ID, rating (1-5), and feedback are required.');
     }
 
@@ -26,6 +30,10 @@ const createReview = async (req, res, next) => {
 
     if (!isSender && !isReceiver) {
       return errorResponse(res, 403, 'You were not a participant in this exchange.');
+    }
+
+    if (exchange.status !== 'Completed') {
+      return errorResponse(res, 409, 'Reviews can only be left once an exchange is completed.');
     }
 
     const revieweeId = isSender ? exchange.receiver : exchange.sender;
@@ -44,7 +52,7 @@ const createReview = async (req, res, next) => {
       exchange: exchangeId,
       reviewer: reviewerId,
       reviewee: revieweeId,
-      rating: Number(rating),
+      rating: stars,
       feedback: feedback.trim(),
     });
 
@@ -65,7 +73,7 @@ const createReview = async (req, res, next) => {
       sender: reviewerId,
       type: 'review_added',
       title: 'New Rating & Review Received',
-      message: `${req.user.name} rated your exchange ${rating} stars: "${feedback.trim().slice(0, 40)}..."`,
+      message: `${req.user.name} rated your exchange ${stars} stars: "${feedback.trim().slice(0, 40)}..."`,
       link: '/profile',
     });
 
@@ -87,9 +95,10 @@ const getUserReviews = async (req, res, next) => {
     const { userId } = req.params;
 
     const reviews = await Review.find({ reviewee: userId })
-      .populate('reviewer', 'name email avatar location')
+      .populate('reviewer', 'name avatar location')
       .populate('exchange', 'offeredSkill wantedSkill')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .limit(MAX_PUBLIC_REVIEWS);
 
     return successResponse(res, 200, 'User reviews retrieved', reviews);
   } catch (error) {

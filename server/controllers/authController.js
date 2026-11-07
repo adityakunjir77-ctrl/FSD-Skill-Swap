@@ -9,7 +9,7 @@ const registerUser = async (req, res, next) => {
   try {
     const { name, email, password } = req.body;
 
-    if (!name || !email || !password) {
+    if (!name || typeof email !== 'string' || !email || typeof password !== 'string' || !password) {
       return errorResponse(res, 400, 'Please provide name, email, and password.');
     }
 
@@ -47,7 +47,7 @@ const loginUser = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
-    if (!email || !password) {
+    if (typeof email !== 'string' || !email || typeof password !== 'string' || !password) {
       return errorResponse(res, 400, 'Please provide both email and password.');
     }
 

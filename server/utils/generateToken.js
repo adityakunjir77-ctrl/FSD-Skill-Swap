@@ -1,11 +1,18 @@
 const jwt = require('jsonwebtoken');
+const { getJwtSecret } = require('../config/env');
+
+const JWT_ALGORITHM = 'HS256';
 
 const generateToken = (userId) => {
-  return jwt.sign(
-    { id: userId },
-    process.env.JWT_SECRET || 'skillswap_super_secret_jwt_key_2026_academic_project',
-    { expiresIn: process.env.JWT_EXPIRE || '30d' }
-  );
+  return jwt.sign({ id: userId }, getJwtSecret(), {
+    algorithm: JWT_ALGORITHM,
+    expiresIn: process.env.JWT_EXPIRE || '7d',
+  });
+};
+
+const verifyToken = (token) => {
+  return jwt.verify(token, getJwtSecret(), { algorithms: [JWT_ALGORITHM] });
 };
 
 module.exports = generateToken;
+module.exports.verifyToken = verifyToken;

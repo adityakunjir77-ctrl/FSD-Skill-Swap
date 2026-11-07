@@ -100,13 +100,23 @@ PORT=5000
 NODE_ENV=development
 CLIENT_URL=http://localhost:5173
 MONGO_URI=mongodb://127.0.0.1:27017/skillswap
-JWT_SECRET=skillswap_super_secret_jwt_key_2026_academic_project
-JWT_EXPIRE=30d
+JWT_SECRET=<your private random value>
+JWT_EXPIRE=7d
+ENABLE_DEMO_DATA=true
+TRUST_PROXY=0
 ```
+
+The server refuses to start unless `JWT_SECRET` is a private random value of at least 32 characters. Generate one with:
+
+```bash
+node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
+```
+
+`ENABLE_DEMO_DATA=true` turns on demo seeding and the embedded fallback database for local development. Both stay off when `NODE_ENV=production`, so a deployed server needs a real `MONGO_URI`. Behind a reverse proxy, set `TRUST_PROXY` to the number of proxies so rate limits see real client IPs.
 
 ### Step 3: Seed Database with Demo Data (Optional)
 
-To populate sample users, skill categories, exchange requests, and reviews for demonstration:
+To populate sample users, skill categories, exchange requests, and reviews for demonstration. This **deletes all existing data** and requires `ENABLE_DEMO_DATA=true`:
 
 ```bash
 # From root directory:
@@ -117,7 +127,10 @@ cd server
 node seed.js
 ```
 
-#### Demo Accounts (Ready to Test):
+#### Demo Accounts (Local Development Only):
+
+These passwords are public. Never create these accounts in a deployed environment.
+
 | Role | Email | Password | Details |
 | :--- | :--- | :--- | :--- |
 | **Admin** | `admin@skillswap.com` | `admin123` | Full access to Administrative Portal & moderation |

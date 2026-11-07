@@ -15,14 +15,17 @@ const exchangeRequestSchema = new mongoose.Schema(
     offeredSkill: {
       type: String,
       required: [true, 'Please specify the skill you are offering to teach'],
+      maxlength: [100, 'Skill name cannot exceed 100 characters'],
     },
     wantedSkill: {
       type: String,
       required: [true, 'Please specify the skill you want to learn'],
+      maxlength: [100, 'Skill name cannot exceed 100 characters'],
     },
     message: {
       type: String,
       trim: true,
+      maxlength: [1000, 'Message cannot exceed 1000 characters'],
       default: 'I would love to exchange skills with you on SkillSwap!',
     },
     status: {

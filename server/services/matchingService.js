@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const { PUBLIC_PROFILE_FIELDS } = require('../utils/userFields');
 
 /**
  * Normalizes skill names for fuzzy / keyphrase comparison
@@ -95,8 +96,9 @@ const getMatchesForUser = async (currentUserId) => {
   const candidates = await User.find({
     _id: { $ne: currentUserId },
     isActive: true,
+    role: 'user',
   })
-    .select('-password')
+    .select(PUBLIC_PROFILE_FIELDS)
     .populate('skillsOffered')
     .populate('skillsWanted');
 

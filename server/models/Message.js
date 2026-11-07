@@ -21,6 +21,7 @@ const messageSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Message content cannot be empty'],
       trim: true,
+      maxlength: [2000, 'Message cannot exceed 2000 characters'],
     },
     isRead: {
       type: Boolean,

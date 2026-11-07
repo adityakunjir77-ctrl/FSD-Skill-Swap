@@ -7,26 +7,23 @@ import Button from '../components/ui/Button';
 import Avatar from '../components/ui/Avatar';
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
 
-const DEMO_ACCOUNTS = [
-  {
-    name: 'Admin',
-    email: 'admin@skillswap.com',
-    password: 'admin123',
-    role: 'Admin',
-  },
-  {
-    name: 'Alex',
-    email: 'alex@example.com',
-    password: 'password123',
-    role: 'Dev (React)',
-  },
-  {
-    name: 'Priya',
-    email: 'priya@example.com',
-    password: 'password123',
-    role: 'AI (Python)',
-  },
-];
+// Dev-only shortcuts for the seeded demo users, stripped from production builds
+const DEMO_ACCOUNTS = import.meta.env.DEV
+  ? [
+      {
+        name: 'Alex',
+        email: 'alex@example.com',
+        password: 'password123',
+        role: 'Dev (React)',
+      },
+      {
+        name: 'Priya',
+        email: 'priya@example.com',
+        password: 'password123',
+        role: 'AI (Python)',
+      },
+    ]
+  : [];
 
 export default function LoginPage() {
   const [formData, setFormData] = useState({ email: '', password: '' });
@@ -84,39 +81,41 @@ export default function LoginPage() {
       </div>
 
       {/* Demo Account Quick-Fill Avatar Chips */}
-      <div className="mb-8 py-3 border-y border-canvas-border">
-        <div className="text-sm font-heading font-semibold text-ink-secondary mb-2.5 flex items-center justify-between">
-          <span>Try a demo account:</span>
-          <span className="text-ink-muted text-xs font-normal">Click to fill</span>
-        </div>
-        <div className="grid grid-cols-3 gap-2">
-          {DEMO_ACCOUNTS.map((acc) => {
-            const isSelected = formData.email === acc.email;
-            return (
-              <button
-                key={acc.email}
-                type="button"
-                onClick={() => handleQuickFill(acc)}
-                className={`flex items-center gap-2 p-1.5 rounded-button border text-left transition-colors ${
-                  isSelected
-                    ? 'bg-canvas-card border-ink-primary shadow-[inset_0_-2px_0_#0F766E]'
-                    : 'bg-transparent border-canvas-border-dark hover:bg-canvas-card hover:border-ink-primary'
-                }`}
-              >
-                <Avatar name={acc.name} size="xs" />
-                <div className="min-w-0 flex-1">
-                  <div className="text-sm font-heading font-semibold text-ink-primary truncate">
-                    {acc.name}
+      {DEMO_ACCOUNTS.length > 0 && (
+        <div className="mb-8 py-3 border-y border-canvas-border">
+          <div className="text-sm font-heading font-semibold text-ink-secondary mb-2.5 flex items-center justify-between">
+            <span>Try a demo account:</span>
+            <span className="text-ink-muted text-xs font-normal">Click to fill</span>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            {DEMO_ACCOUNTS.map((acc) => {
+              const isSelected = formData.email === acc.email;
+              return (
+                <button
+                  key={acc.email}
+                  type="button"
+                  onClick={() => handleQuickFill(acc)}
+                  className={`flex items-center gap-2 p-1.5 rounded-button border text-left transition-colors ${
+                    isSelected
+                      ? 'bg-canvas-card border-ink-primary shadow-[inset_0_-2px_0_#0F766E]'
+                      : 'bg-transparent border-canvas-border-dark hover:bg-canvas-card hover:border-ink-primary'
+                  }`}
+                >
+                  <Avatar name={acc.name} size="xs" />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-heading font-semibold text-ink-primary truncate">
+                      {acc.name}
+                    </div>
+                    <div className="text-xs text-ink-muted truncate">
+                      {acc.role}
+                    </div>
                   </div>
-                  <div className="text-xs text-ink-muted truncate">
-                    {acc.role}
-                  </div>
-                </div>
-              </button>
-            );
-          })}
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
       {errorMsg && (
         <div className="mb-5 py-2.5 px-3 bg-status-danger-bg border-l-2 border-status-danger rounded-button text-sm text-status-danger font-medium" role="alert">

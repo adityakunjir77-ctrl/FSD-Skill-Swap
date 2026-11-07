@@ -1,5 +1,5 @@
-const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const { verifyToken } = require('../utils/generateToken');
 const { errorResponse } = require('../utils/apiResponse');
 
 const protect = async (req, res, next) => {
@@ -17,10 +17,7 @@ const protect = async (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(
-      token,
-      process.env.JWT_SECRET || 'skillswap_super_secret_jwt_key_2026_academic_project'
-    );
+    const decoded = verifyToken(token);
 
     const user = await User.findById(decoded.id).select('-password');
 

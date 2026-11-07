@@ -2,6 +2,7 @@ const Message = require('../models/Message');
 const ExchangeRequest = require('../models/ExchangeRequest');
 const Notification = require('../models/Notification');
 const { successResponse, errorResponse } = require('../utils/apiResponse');
+const { USER_SUMMARY_FIELDS } = require('../utils/userFields');
 
 // @desc    Get all chat messages for a specific exchange request
 // @route   GET /api/messages/:exchangeId
@@ -19,7 +20,7 @@ const getMessagesByExchange = async (req, res, next) => {
     const isSender = exchange.sender.toString() === userId.toString();
     const isReceiver = exchange.receiver.toString() === userId.toString();
 
-    if (!isSender && !isReceiver && req.user.role !== 'admin') {
+    if (!isSender && !isReceiver) {
       return errorResponse(res, 403, 'Not authorized to view messages for this exchange.');
     }
 
@@ -30,8 +31,8 @@ const getMessagesByExchange = async (req, res, next) => {
     );
 
     const messages = await Message.find({ exchange: exchangeId })
-      .populate('sender', 'name email avatar')
-      .populate('receiver', 'name email avatar')
+      .populate('sender', USER_SUMMARY_FIELDS)
+      .populate('receiver', USER_SUMMARY_FIELDS)
       .sort({ createdAt: 1 });
 
     return successResponse(res, 200, 'Chat history retrieved', messages);
@@ -48,7 +49,7 @@ const sendMessage = async (req, res, next) => {
     const { exchangeId, content } = req.body;
     const userId = req.user._id;
 
-    if (!exchangeId || !content || !content.trim()) {
+    if (!exchangeId || typeof content !== 'string' || !content.trim()) {
       return errorResponse(res, 400, 'Exchange ID and message content are required.');
     }
 
@@ -58,6 +59,12 @@ const sendMessage = async (req, res, next) => {
     }
 
     const isSender = exchange.sender.toString() === userId.toString();
+    const isReceiver = exchange.receiver.toString() === userId.toString();
+
+    if (!isSender && !isReceiver) {
+      return errorResponse(res, 403, 'Not authorized to send messages for this exchange.');
+    }
+
     const receiverId = isSender ? exchange.receiver : exchange.sender;
 
     const message = await Message.create({
@@ -68,8 +75,8 @@ const sendMessage = async (req, res, next) => {
     });
 
     const populated = await Message.findById(message._id)
-      .populate('sender', 'name email avatar')
-      .populate('receiver', 'name email avatar');
+      .populate('sender', USER_SUMMARY_FIELDS)
+      .populate('receiver', USER_SUMMARY_FIELDS);
 
     // Create Notification for recipient
     await Notification.create({

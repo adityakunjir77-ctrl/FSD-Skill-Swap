@@ -1,6 +1,15 @@
 const ExchangeRequest = require('../models/ExchangeRequest');
 const User = require('../models/User');
 const { successResponse, errorResponse } = require('../utils/apiResponse');
+const { USER_SUMMARY_FIELDS } = require('../utils/userFields');
+
+// Current status -> next status -> who may make that change. Statuses missing
+// from the table (Rejected, Completed, Cancelled) are final.
+const EXCHANGE_TRANSITIONS = {
+  Pending: { Accepted: ['receiver'], Rejected: ['receiver'], Cancelled: ['sender'] },
+  Accepted: { 'In Progress': ['sender', 'receiver'], Cancelled: ['sender', 'receiver'] },
+  'In Progress': { Completed: ['sender', 'receiver'], Cancelled: ['sender', 'receiver'] },
+};
 
 // @desc    Create a new skill exchange request
 // @route   POST /api/exchanges
@@ -46,8 +55,8 @@ const createExchangeRequest = async (req, res, next) => {
     });
 
     const populated = await ExchangeRequest.findById(exchange._id)
-      .populate('sender', 'name email avatar location averageRating')
-      .populate('receiver', 'name email avatar location averageRating');
+      .populate('sender', USER_SUMMARY_FIELDS)
+      .populate('receiver', USER_SUMMARY_FIELDS);
 
     return successResponse(res, 201, 'Exchange request sent successfully', populated);
   } catch (error) {
@@ -62,12 +71,15 @@ const getUserExchangeRequests = async (req, res, next) => {
   try {
     const userId = req.user._id;
 
-    const requests = await ExchangeRequest.find({
+    const populatedRequests = await ExchangeRequest.find({
       $or: [{ sender: userId }, { receiver: userId }],
     })
-      .populate('sender', 'name email avatar location averageRating experienceLevel')
-      .populate('receiver', 'name email avatar location averageRating experienceLevel')
+      .populate('sender', USER_SUMMARY_FIELDS)
+      .populate('receiver', USER_SUMMARY_FIELDS)
       .sort({ updatedAt: -1 });
+
+    // Skip exchanges whose other party was deleted by an admin
+    const requests = populatedRequests.filter((r) => r.sender && r.receiver);
 
     const received = requests.filter((r) => r.receiver._id.toString() === userId.toString());
     const sent = requests.filter((r) => r.sender._id.toString() === userId.toString());
@@ -108,19 +120,36 @@ const updateExchangeStatus = async (req, res, next) => {
       return errorResponse(res, 403, 'Not authorized to modify this exchange request.');
     }
 
-    const previousStatus = exchange.status;
-    exchange.status = status;
-    await exchange.save();
-
-    // If status changed to Completed, increment completedExchanges count
-    if (status === 'Completed' && previousStatus !== 'Completed') {
-      await User.findByIdAndUpdate(exchange.sender, { $inc: { completedExchanges: 1 } });
-      await User.findByIdAndUpdate(exchange.receiver, { $inc: { completedExchanges: 1 } });
+    const allowedRoles = EXCHANGE_TRANSITIONS[exchange.status]?.[status];
+    if (!allowedRoles) {
+      return errorResponse(res, 409, `An exchange that is ${exchange.status} cannot be marked ${status}.`);
     }
 
-    const updated = await ExchangeRequest.findById(exchange._id)
-      .populate('sender', 'name email avatar location averageRating')
-      .populate('receiver', 'name email avatar location averageRating');
+    const callerRole = isSender ? 'sender' : 'receiver';
+    if (req.user.role !== 'admin' && !allowedRoles.includes(callerRole)) {
+      return errorResponse(res, 403, `You cannot mark this exchange ${status}.`);
+    }
+
+    // Matching on the current status means only one of several concurrent
+    // requests can win, so the counters below are incremented exactly once
+    const updated = await ExchangeRequest.findOneAndUpdate(
+      { _id: exchange._id, status: exchange.status },
+      { status },
+      { new: true }
+    )
+      .populate('sender', USER_SUMMARY_FIELDS)
+      .populate('receiver', USER_SUMMARY_FIELDS);
+
+    if (!updated) {
+      return errorResponse(res, 409, 'This exchange was just updated. Please refresh and try again.');
+    }
+
+    if (status === 'Completed') {
+      await User.updateMany(
+        { _id: { $in: [exchange.sender, exchange.receiver] } },
+        { $inc: { completedExchanges: 1 } }
+      );
+    }
 
     return successResponse(res, 200, `Exchange request marked as ${status}`, updated);
   } catch (error) {

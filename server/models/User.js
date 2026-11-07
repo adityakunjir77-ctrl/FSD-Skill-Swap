@@ -1,12 +1,24 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
+const isAllowedAvatarUrl = (value) => {
+  if (!value) return true;
+  if (value.startsWith('/')) return !/^\/[/\\]/.test(value);
+
+  try {
+    return new URL(value).protocol === 'https:';
+  } catch (error) {
+    return false;
+  }
+};
+
 const userSchema = new mongoose.Schema(
   {
     name: {
       type: String,
       required: [true, 'Please provide your full name'],
       trim: true,
+      maxlength: [100, 'Name cannot exceed 100 characters'],
     },
     email: {
       type: String,
@@ -33,6 +45,11 @@ const userSchema = new mongoose.Schema(
     avatar: {
       type: String,
       default: '',
+      maxlength: [500, 'Avatar URL cannot exceed 500 characters'],
+      validate: {
+        validator: isAllowedAvatarUrl,
+        message: 'Avatar must be an https:// URL or a same-site path',
+      },
     },
     bio: {
       type: String,
@@ -42,6 +59,7 @@ const userSchema = new mongoose.Schema(
     location: {
       type: String,
       default: 'Remote',
+      maxlength: [100, 'Location cannot exceed 100 characters'],
     },
     experienceLevel: {
       type: String,
@@ -51,6 +69,7 @@ const userSchema = new mongoose.Schema(
     availability: {
       type: String,
       default: 'Weekends & Evenings',
+      maxlength: [100, 'Availability cannot exceed 100 characters'],
     },
     skillsOffered: [
       {

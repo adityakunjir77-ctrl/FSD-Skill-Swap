@@ -20,9 +20,11 @@ export const SocketProvider = ({ children }) => {
       newSocket.on('connect', () => {
         setConnected(true);
         console.log('[Socket] Connected with ID:', newSocket.id);
-        if (user._id) {
-          newSocket.emit('join-user-room', user._id);
-        }
+      });
+
+      newSocket.on('connect_error', (err) => {
+        setConnected(false);
+        console.warn('[Socket] Connection refused:', err.message);
       });
 
       newSocket.on('disconnect', () => {

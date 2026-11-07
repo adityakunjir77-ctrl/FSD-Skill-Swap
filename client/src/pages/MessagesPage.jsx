@@ -129,17 +129,10 @@ export default function MessagesPage() {
     const content = newMessageText.trim();
     setNewMessageText('');
 
-    const isSender = selectedExchange.sender._id === currentUser._id;
-    const receiverId = isSender
-      ? selectedExchange.receiver._id
-      : selectedExchange.sender._id;
-
     // Real-time Socket.io dispatch
     if (socket && connected) {
       socket.emit('send-message', {
         exchangeId: selectedExchange._id,
-        senderId: currentUser._id,
-        receiverId,
         content,
       });
     } else {
@@ -444,6 +437,7 @@ export default function MessagesPage() {
                   type="text"
                   placeholder={`Message ${currentPartner.name.split(' ')[0]}...`}
                   value={newMessageText}
+                  maxLength={2000}
                   onChange={(e) => setNewMessageText(e.target.value)}
                   className="flex-1 min-w-0 px-3.5 py-2 text-[15px] bg-canvas border border-canvas-border-dark rounded-input text-ink-primary placeholder-ink-muted hover:border-ink-muted focus-ring transition-colors"
                 />

@@ -6,6 +6,7 @@ const skillSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Skill name is required'],
       trim: true,
+      maxlength: [100, 'Skill name cannot exceed 100 characters'],
       unique: true,
     },
     category: {
@@ -30,6 +31,7 @@ const skillSchema = new mongoose.Schema(
     description: {
       type: String,
       trim: true,
+      maxlength: [500, 'Skill description cannot exceed 500 characters'],
     },
     isApproved: {
       type: Boolean,

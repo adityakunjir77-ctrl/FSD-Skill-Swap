@@ -1,6 +1,9 @@
 const Skill = require('../models/Skill');
 const User = require('../models/User');
 const { successResponse, errorResponse } = require('../utils/apiResponse');
+const { SEARCH_TIMEOUT_MS, toSearchPattern, exactNameRegex } = require('../utils/sanitize');
+
+const MAX_SKILLS = 500;
 
 // @desc    Get all skills (with search & category filtering)
 // @route   GET /api/skills
@@ -8,17 +11,21 @@ const { successResponse, errorResponse } = require('../utils/apiResponse');
 const getSkills = async (req, res, next) => {
   try {
     const { search, category } = req.query;
-    let query = {};
+    const searchPattern = toSearchPattern(search);
+    const query = {};
 
-    if (search) {
-      query.name = { $regex: search, $options: 'i' };
+    if (searchPattern) {
+      query.name = { $regex: searchPattern, $options: 'i' };
     }
 
-    if (category && category !== 'All') {
+    if (typeof category === 'string' && category && category !== 'All') {
       query.category = category;
     }
 
-    const skills = await Skill.find(query).sort({ name: 1 });
+    const skills = await Skill.find(query)
+      .sort({ name: 1 })
+      .limit(MAX_SKILLS)
+      .maxTimeMS(SEARCH_TIMEOUT_MS);
     return successResponse(res, 200, 'Skills retrieved successfully', skills);
   } catch (error) {
     next(error);
@@ -65,11 +72,11 @@ const createSkill = async (req, res, next) => {
   try {
     const { name, category, description } = req.body;
 
-    if (!name) {
+    if (typeof name !== 'string' || !name.trim()) {
       return errorResponse(res, 400, 'Skill name is required.');
     }
 
-    const existingSkill = await Skill.findOne({ name: new RegExp(`^${name.trim()}$`, 'i') });
+    const existingSkill = await Skill.findOne({ name: exactNameRegex(name.trim()) });
     if (existingSkill) {
       return successResponse(res, 200, 'Skill already exists', existingSkill);
     }

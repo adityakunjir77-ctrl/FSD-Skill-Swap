@@ -1,6 +1,10 @@
 const User = require('../models/User');
 const Skill = require('../models/Skill');
 const { successResponse, errorResponse } = require('../utils/apiResponse');
+const { SEARCH_TIMEOUT_MS, toSearchPattern, exactNameRegex } = require('../utils/sanitize');
+const { PUBLIC_PROFILE_FIELDS } = require('../utils/userFields');
+
+const MAX_PUBLIC_USERS = 200;
 
 // Helper to resolve skill names to ObjectId array
 const resolveSkills = async (skillInputs) => {
@@ -16,7 +20,7 @@ const resolveSkills = async (skillInputs) => {
         // Find or create skill by name
         const trimmedName = item.trim();
         if (trimmedName) {
-          let skill = await Skill.findOne({ name: new RegExp(`^${trimmedName}$`, 'i') });
+          let skill = await Skill.findOne({ name: exactNameRegex(trimmedName) });
           if (!skill) {
             skill = await Skill.create({ name: trimmedName, category: 'Other' });
           }
@@ -36,35 +40,33 @@ const resolveSkills = async (skillInputs) => {
 // @access  Public
 const getUsers = async (req, res, next) => {
   try {
-    const { search, category, role } = req.query;
-    let query = { isActive: true };
+    const { search, category } = req.query;
+    const searchPattern = toSearchPattern(search);
+    const query = { isActive: true, role: 'user' };
 
-    if (search) {
+    if (searchPattern) {
       query.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { bio: { $regex: search, $options: 'i' } },
-        { location: { $regex: search, $options: 'i' } },
+        { name: { $regex: searchPattern, $options: 'i' } },
+        { bio: { $regex: searchPattern, $options: 'i' } },
+        { location: { $regex: searchPattern, $options: 'i' } },
       ];
     }
 
-    if (role) {
-      query.role = role;
+    // Filter by skill category if requested
+    if (typeof category === 'string' && category) {
+      const skillIds = await Skill.find({ category }).distinct('_id');
+      query.$and = [
+        { $or: [{ skillsOffered: { $in: skillIds } }, { skillsWanted: { $in: skillIds } }] },
+      ];
     }
 
-    let users = await User.find(query)
-      .select('-password')
+    const users = await User.find(query)
+      .select(PUBLIC_PROFILE_FIELDS)
       .populate('skillsOffered')
       .populate('skillsWanted')
-      .sort({ createdAt: -1 });
-
-    // Filter by skill category if requested
-    if (category) {
-      users = users.filter((u) => {
-        const hasOfferedCat = u.skillsOffered.some((s) => s.category === category);
-        const hasWantedCat = u.skillsWanted.some((s) => s.category === category);
-        return hasOfferedCat || hasWantedCat;
-      });
-    }
+      .sort({ createdAt: -1 })
+      .limit(MAX_PUBLIC_USERS)
+      .maxTimeMS(SEARCH_TIMEOUT_MS);
 
     return successResponse(res, 200, 'Users retrieved successfully', users);
   } catch (error) {
@@ -77,12 +79,12 @@ const getUsers = async (req, res, next) => {
 // @access  Public
 const getUserById = async (req, res, next) => {
   try {
-    const user = await User.findById(req.params.id)
-      .select('-password')
+    const user = await User.findOne({ _id: req.params.id, isActive: true })
+      .select(PUBLIC_PROFILE_FIELDS)
       .populate('skillsOffered')
       .populate('skillsWanted');
 
-    if (!user || !user.isActive) {
+    if (!user) {
       return errorResponse(res, 404, 'User profile not found.');
     }
 
