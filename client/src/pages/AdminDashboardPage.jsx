@@ -59,6 +59,8 @@ export default function AdminDashboardPage() {
   const [categories, setCategories] = useState([]);
   const [exchanges, setExchanges] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [cursors, setCursors] = useState({ users: null, skills: null, exchanges: null });
+  const [loadingMoreKind, setLoadingMoreKind] = useState(null);
 
   // Filters
   const [userSearch, setUserSearch] = useState('');
@@ -84,6 +86,45 @@ export default function AdminDashboardPage() {
     loadData();
   }, [currentPath]);
 
+  // Admin lists are paged on the server, newest first. Filters apply to the
+  // rows loaded so far.
+  const setCursorFor = (kind, res) =>
+    setCursors((prev) => ({ ...prev, [kind]: res.pagination?.nextCursor || null }));
+
+  const loadMore = async (kind) => {
+    const cursor = cursors[kind];
+    if (!cursor) return;
+    const fetchers = { users: getAdminUsers, skills: getAdminSkills, exchanges: getAdminExchanges };
+    const setters = { users: setUsers, skills: setSkills, exchanges: setExchanges };
+
+    setLoadingMoreKind(kind);
+    try {
+      const res = await fetchers[kind]({ cursor });
+      if (res.success) {
+        setters[kind]((prev) => [...prev, ...(res.data || [])]);
+        setCursorFor(kind, res);
+      }
+    } catch (err) {
+      error('Failed to load more records');
+    } finally {
+      setLoadingMoreKind(null);
+    }
+  };
+
+  const renderLoadMore = (kind) =>
+    !loading && cursors[kind] ? (
+      <div className="flex justify-center pt-4">
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={() => loadMore(kind)}
+          loading={loadingMoreKind === kind}
+        >
+          Load more
+        </Button>
+      </div>
+    ) : null;
+
   const loadData = async () => {
     setLoading(true);
     try {
@@ -98,17 +139,26 @@ export default function AdminDashboardPage() {
         if (exchangesRes.success) setExchanges(exchangesRes.data || []);
       } else if (isUsersView) {
         const res = await getAdminUsers();
-        if (res.success) setUsers(res.data || []);
+        if (res.success) {
+          setUsers(res.data || []);
+          setCursorFor('users', res);
+        }
       } else if (isSkillsView) {
         const [catRes, skillsRes] = await Promise.all([
           getSkillCategories(),
           getAdminSkills(),
         ]);
         if (catRes.success) setCategories(catRes.data || []);
-        if (skillsRes.success) setSkills(skillsRes.data || []);
+        if (skillsRes.success) {
+          setSkills(skillsRes.data || []);
+          setCursorFor('skills', skillsRes);
+        }
       } else if (isExchangesView) {
         const res = await getAdminExchanges();
-        if (res.success) setExchanges(res.data || []);
+        if (res.success) {
+          setExchanges(res.data || []);
+          setCursorFor('exchanges', res);
+        }
       }
     } catch (err) {
       error('Failed to load administrative data');
@@ -456,6 +506,7 @@ export default function AdminDashboardPage() {
               </tbody>
             </table>
           </div>
+          {renderLoadMore('users')}
         </div>
       )}
 
@@ -521,6 +572,7 @@ export default function AdminDashboardPage() {
                 </tbody>
               </table>
             </div>
+            {renderLoadMore('skills')}
           </div>
 
           {/* Add Skill Panel (4 cols) */}
@@ -702,6 +754,7 @@ export default function AdminDashboardPage() {
               </tbody>
             </table>
           </div>
+          {renderLoadMore('exchanges')}
         </div>
       )}
 

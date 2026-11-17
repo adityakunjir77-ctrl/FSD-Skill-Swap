@@ -4,6 +4,10 @@ const ExchangeRequest = require('../models/ExchangeRequest');
 const Review = require('../models/Review');
 const { successResponse, errorResponse } = require('../utils/apiResponse');
 const { SEARCH_TIMEOUT_MS, toSearchPattern } = require('../utils/sanitize');
+const { findPage } = require('../utils/pagination');
+
+// Admin lists are newest first in pages of up to 200
+const ADMIN_PAGE = { field: 'createdAt', defaultLimit: 100, maxLimit: 200 };
 
 // Drops live sockets, which would otherwise keep receiving after the account is closed
 const disconnectUserSockets = (req, userId) => {
@@ -60,14 +64,15 @@ const getAdminUsers = async (req, res, next) => {
       ];
     }
 
-    const users = await User.find(query)
-      .select('-password')
-      .populate('skillsOffered')
-      .populate('skillsWanted')
-      .sort({ createdAt: -1 })
-      .maxTimeMS(SEARCH_TIMEOUT_MS);
+    const { items, pagination } = await findPage(User, query, {
+      ...ADMIN_PAGE,
+      cursorParam: req.query.cursor,
+      limitParam: req.query.limit,
+      build: (q) =>
+        q.select('-password').populate('skillsOffered').populate('skillsWanted').maxTimeMS(SEARCH_TIMEOUT_MS),
+    });
 
-    return successResponse(res, 200, 'Admin users list retrieved', users);
+    return successResponse(res, 200, 'Admin users list retrieved', items, { pagination });
   } catch (error) {
     next(error);
   }
@@ -142,12 +147,18 @@ const deleteUser = async (req, res, next) => {
 // @access  Private/Admin
 const getAdminExchanges = async (req, res, next) => {
   try {
-    const exchanges = await ExchangeRequest.find()
-      .populate('sender', 'name email avatar')
-      .populate('receiver', 'name email avatar')
-      .sort({ createdAt: -1 });
+    const { items, pagination } = await findPage(ExchangeRequest, {}, {
+      ...ADMIN_PAGE,
+      cursorParam: req.query.cursor,
+      limitParam: req.query.limit,
+      build: (q) =>
+        q
+          .populate('sender', 'name email avatar')
+          .populate('receiver', 'name email avatar')
+          .maxTimeMS(SEARCH_TIMEOUT_MS),
+    });
 
-    return successResponse(res, 200, 'Admin exchange audit log retrieved', exchanges);
+    return successResponse(res, 200, 'Admin exchange audit log retrieved', items, { pagination });
   } catch (error) {
     next(error);
   }
@@ -158,8 +169,14 @@ const getAdminExchanges = async (req, res, next) => {
 // @access  Private/Admin
 const getAdminSkills = async (req, res, next) => {
   try {
-    const skills = await Skill.find().sort({ createdAt: -1 });
-    return successResponse(res, 200, 'Admin skills list retrieved', skills);
+    const { items, pagination } = await findPage(Skill, {}, {
+      ...ADMIN_PAGE,
+      cursorParam: req.query.cursor,
+      limitParam: req.query.limit,
+      build: (q) => q.maxTimeMS(SEARCH_TIMEOUT_MS),
+    });
+
+    return successResponse(res, 200, 'Admin skills list retrieved', items, { pagination });
   } catch (error) {
     next(error);
   }

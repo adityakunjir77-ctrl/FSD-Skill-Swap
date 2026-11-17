@@ -2,6 +2,7 @@ const Session = require('../models/Session');
 const ExchangeRequest = require('../models/ExchangeRequest');
 const { successResponse, errorResponse } = require('../utils/apiResponse');
 const { USER_SUMMARY_FIELDS } = require('../utils/userFields');
+const { findPage } = require('../utils/pagination');
 
 const SCHEDULABLE_EXCHANGE_STATUSES = ['Accepted', 'In Progress'];
 
@@ -70,11 +71,21 @@ const getUserSessions = async (req, res, next) => {
   try {
     const userId = req.user._id;
 
-    const sessions = await populateSession(
-      Session.find({ $or: [{ proposer: userId }, { partner: userId }] })
-    ).sort({ createdAt: -1 });
+    // Newest first; `cursor` loads the next page
+    const { items, pagination } = await findPage(
+      Session,
+      { $or: [{ proposer: userId }, { partner: userId }] },
+      {
+        field: 'createdAt',
+        cursorParam: req.query.cursor,
+        limitParam: req.query.limit,
+        defaultLimit: 50,
+        maxLimit: 100,
+        build: populateSession,
+      }
+    );
 
-    return successResponse(res, 200, 'Sessions retrieved successfully', sessions);
+    return successResponse(res, 200, 'Sessions retrieved successfully', items, { pagination });
   } catch (error) {
     next(error);
   }

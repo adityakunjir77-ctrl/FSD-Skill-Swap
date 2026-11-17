@@ -127,6 +127,12 @@ userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
+// Match candidates: a compound index can hold only one array field, so offered
+// and wanted skills need separate indexes. Plus the admin list, newest first.
+userSchema.index({ isActive: 1, role: 1, skillsOffered: 1 });
+userSchema.index({ isActive: 1, role: 1, skillsWanted: 1 });
+userSchema.index({ createdAt: -1, _id: -1 });
+
 module.exports = mongoose.model('User', userSchema);
 module.exports.EMAIL_MAX_LENGTH = EMAIL_MAX_LENGTH;
 module.exports.MAX_SKILLS_PER_LIST = MAX_SKILLS_PER_LIST;

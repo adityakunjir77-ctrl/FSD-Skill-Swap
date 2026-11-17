@@ -2,6 +2,9 @@ const ExchangeRequest = require('../models/ExchangeRequest');
 const User = require('../models/User');
 const { successResponse, errorResponse } = require('../utils/apiResponse');
 const { USER_SUMMARY_FIELDS } = require('../utils/userFields');
+const { findPage } = require('../utils/pagination');
+
+const EXCHANGE_STATUSES = ExchangeRequest.schema.path('status').enumValues;
 
 // Current status -> next status -> who may make that change. Statuses missing
 // from the table (Rejected, Completed, Cancelled) are final.
@@ -70,25 +73,41 @@ const createExchangeRequest = async (req, res, next) => {
 const getUserExchangeRequests = async (req, res, next) => {
   try {
     const userId = req.user._id;
+    const filter = { $or: [{ sender: userId }, { receiver: userId }] };
 
-    const populatedRequests = await ExchangeRequest.find({
-      $or: [{ sender: userId }, { receiver: userId }],
-    })
-      .populate('sender', USER_SUMMARY_FIELDS)
-      .populate('receiver', USER_SUMMARY_FIELDS)
-      .sort({ updatedAt: -1 });
+    // Optional comma-separated status filter, e.g. ?status=Accepted,In Progress
+    if (typeof req.query.status === 'string' && req.query.status) {
+      const statuses = req.query.status.split(',').map((s) => s.trim());
+      if (statuses.some((s) => !EXCHANGE_STATUSES.includes(s))) {
+        return errorResponse(res, 400, 'Invalid status filter.');
+      }
+      filter.status = { $in: statuses };
+    }
+
+    // Most recently updated first; `cursor` loads the next page
+    const { items, pagination } = await findPage(ExchangeRequest, filter, {
+      field: 'updatedAt',
+      cursorParam: req.query.cursor,
+      limitParam: req.query.limit,
+      defaultLimit: 50,
+      maxLimit: 100,
+      build: (query) =>
+        query.populate('sender', USER_SUMMARY_FIELDS).populate('receiver', USER_SUMMARY_FIELDS),
+    });
 
     // Skip exchanges whose other party was deleted by an admin
-    const requests = populatedRequests.filter((r) => r.sender && r.receiver);
+    const requests = items.filter((r) => r.sender && r.receiver);
 
     const received = requests.filter((r) => r.receiver._id.toString() === userId.toString());
     const sent = requests.filter((r) => r.sender._id.toString() === userId.toString());
 
-    return successResponse(res, 200, 'Exchange requests fetched', {
-      all: requests,
-      received,
-      sent,
-    });
+    return successResponse(
+      res,
+      200,
+      'Exchange requests fetched',
+      { all: requests, received, sent },
+      { pagination }
+    );
   } catch (error) {
     next(error);
   }

@@ -20,8 +20,8 @@ export const deleteUser = async (userId) => {
   return response.data;
 };
 
-export const getAdminSkills = async () => {
-  const response = await API.get('/admin/skills');
+export const getAdminSkills = async (params = {}) => {
+  const response = await API.get('/admin/skills', { params });
   return response.data;
 };
 
@@ -30,7 +30,7 @@ export const deleteSkill = async (skillId) => {
   return response.data;
 };
 
-export const getAdminExchanges = async () => {
-  const response = await API.get('/admin/exchanges');
+export const getAdminExchanges = async (params = {}) => {
+  const response = await API.get('/admin/exchanges', { params });
   return response.data;
 };

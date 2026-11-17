@@ -32,6 +32,8 @@ export default function RequestsPage() {
 
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [nextCursor, setNextCursor] = useState(null);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [activeTab, setActiveTab] = useState('received'); // 'received' | 'sent' | 'active' | 'completed' | 'all'
 
   // Modals
@@ -48,11 +50,29 @@ export default function RequestsPage() {
       const res = await getUserExchanges();
       if (res.success) {
         setRequests(res.data.all || []);
+        setNextCursor(res.pagination?.nextCursor || null);
       }
     } catch (err) {
       error('Failed to load exchange requests');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // The list is paged, most recently updated first
+  const loadMoreRequests = async () => {
+    if (!nextCursor) return;
+    setLoadingMore(true);
+    try {
+      const res = await getUserExchanges({ cursor: nextCursor });
+      if (res.success) {
+        setRequests((prev) => [...prev, ...(res.data.all || [])]);
+        setNextCursor(res.pagination?.nextCursor || null);
+      }
+    } catch (err) {
+      error('Failed to load older requests');
+    } finally {
+      setLoadingMore(false);
     }
   };
 
@@ -349,6 +369,14 @@ export default function RequestsPage() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {!loading && nextCursor && (
+        <div className="flex justify-center">
+          <Button variant="secondary" size="sm" onClick={loadMoreRequests} loading={loadingMore}>
+            Load older requests
+          </Button>
         </div>
       )}
 

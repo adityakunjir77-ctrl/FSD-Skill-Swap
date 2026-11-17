@@ -4,6 +4,7 @@ const Notification = require('../models/Notification');
 const { successResponse, errorResponse } = require('../utils/apiResponse');
 const { USER_SUMMARY_FIELDS } = require('../utils/userFields');
 const { isChatOpen } = require('../utils/chatRules');
+const { findPage } = require('../utils/pagination');
 
 // @desc    Get all chat messages for a specific exchange request
 // @route   GET /api/messages/:exchangeId
@@ -31,12 +32,19 @@ const getMessagesByExchange = async (req, res, next) => {
       { $set: { isRead: true } }
     );
 
-    const messages = await Message.find({ exchange: exchangeId })
-      .populate('sender', USER_SUMMARY_FIELDS)
-      .populate('receiver', USER_SUMMARY_FIELDS)
-      .sort({ createdAt: 1 });
+    // Newest page first; `cursor` loads earlier messages
+    const { items, pagination } = await findPage(Message, { exchange: exchange._id }, {
+      field: 'createdAt',
+      cursorParam: req.query.cursor,
+      limitParam: req.query.limit,
+      defaultLimit: 50,
+      maxLimit: 100,
+      build: (query) =>
+        query.populate('sender', USER_SUMMARY_FIELDS).populate('receiver', USER_SUMMARY_FIELDS),
+    });
 
-    return successResponse(res, 200, 'Chat history retrieved', messages);
+    // Returned oldest-first so the page reads top to bottom
+    return successResponse(res, 200, 'Chat history retrieved', items.reverse(), { pagination });
   } catch (error) {
     next(error);
   }

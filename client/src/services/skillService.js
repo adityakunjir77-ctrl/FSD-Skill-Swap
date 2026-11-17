@@ -15,7 +15,7 @@ export const createSkill = async (skillData) => {
   return response.data;
 };
 
-export const getRecommendedMatches = async () => {
-  const response = await API.get('/matches');
+export const getRecommendedMatches = async (params = {}) => {
+  const response = await API.get('/matches', { params });
   return response.data;
 };

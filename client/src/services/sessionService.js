@@ -5,8 +5,8 @@ export const createSession = async (data) => {
   return response.data;
 };
 
-export const getUserSessions = async () => {
-  const response = await API.get('/sessions');
+export const getUserSessions = async (params = {}) => {
+  const response = await API.get('/sessions', { params });
   return response.data;
 };
 

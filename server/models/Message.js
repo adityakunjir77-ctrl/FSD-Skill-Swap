@@ -33,4 +33,8 @@ const messageSchema = new mongoose.Schema(
   }
 );
 
+// Paged chat history and unread updates
+messageSchema.index({ exchange: 1, createdAt: -1, _id: -1 });
+messageSchema.index({ exchange: 1, receiver: 1, isRead: 1 });
+
 module.exports = mongoose.model('Message', messageSchema);

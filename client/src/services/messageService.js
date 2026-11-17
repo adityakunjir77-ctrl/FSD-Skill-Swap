@@ -1,7 +1,8 @@
 import API from './api';
 
-export const getMessagesByExchange = async (exchangeId) => {
-  const response = await API.get(`/messages/${exchangeId}`);
+// params: { cursor, limit }; pass the previous response's nextCursor for older messages
+export const getMessagesByExchange = async (exchangeId, params = {}) => {
+  const response = await API.get(`/messages/${exchangeId}`, { params });
   return response.data;
 };
 

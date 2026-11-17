@@ -43,4 +43,7 @@ const skillSchema = new mongoose.Schema(
   }
 );
 
+// Admin catalog, newest first
+skillSchema.index({ createdAt: -1, _id: -1 });
+
 module.exports = mongoose.model('Skill', skillSchema);

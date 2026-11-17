@@ -39,4 +39,7 @@ const reviewSchema = new mongoose.Schema(
 // Prevent duplicate reviews from the same reviewer for the same exchange
 reviewSchema.index({ exchange: 1, reviewer: 1 }, { unique: true });
 
+// Reviews received by a user, newest first, and rating recalculation
+reviewSchema.index({ reviewee: 1, createdAt: -1 });
+
 module.exports = mongoose.model('Review', reviewSchema);

@@ -39,4 +39,9 @@ const exchangeRequestSchema = new mongoose.Schema(
   }
 );
 
+// Paged sent/received lists (most recently updated first) and the admin audit log
+exchangeRequestSchema.index({ sender: 1, updatedAt: -1, _id: -1 });
+exchangeRequestSchema.index({ receiver: 1, updatedAt: -1, _id: -1 });
+exchangeRequestSchema.index({ createdAt: -1, _id: -1 });
+
 module.exports = mongoose.model('ExchangeRequest', exchangeRequestSchema);

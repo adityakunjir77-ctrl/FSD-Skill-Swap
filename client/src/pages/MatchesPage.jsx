@@ -29,7 +29,8 @@ export default function MatchesPage() {
   const fetchMatches = async () => {
     setLoading(true);
     try {
-      const res = await getRecommendedMatches();
+      // Top 50 matches by score (the server maximum)
+      const res = await getRecommendedMatches({ limit: 50 });
       if (res.success) {
         setMatches(res.data || []);
       }

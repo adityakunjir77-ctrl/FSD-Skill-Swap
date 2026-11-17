@@ -1,8 +1,11 @@
 /**
  * Standardized API Response Helper
  */
-const successResponse = (res, statusCode = 200, message = 'Success', data = null) => {
+// `extra` adds top-level fields such as `pagination` without changing `data`,
+// so existing clients that read only `data` keep working.
+const successResponse = (res, statusCode = 200, message = 'Success', data = null, extra = {}) => {
   return res.status(statusCode).json({
+    ...extra,
     success: true,
     message,
     data,

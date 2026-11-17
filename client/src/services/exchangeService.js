@@ -5,8 +5,9 @@ export const createExchange = async (data) => {
   return response.data;
 };
 
-export const getUserExchanges = async () => {
-  const response = await API.get('/exchanges');
+// params: { cursor, limit, status } for paging and filtering
+export const getUserExchanges = async (params = {}) => {
+  const response = await API.get('/exchanges', { params });
   return response.data;
 };
 

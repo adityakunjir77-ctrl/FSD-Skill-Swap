@@ -45,7 +45,7 @@ export default function DashboardPage() {
     setLoading(true);
     try {
       const [matchesRes, sessionsRes, requestsRes] = await Promise.all([
-        getRecommendedMatches(),
+        getRecommendedMatches({ limit: 3 }),
         getUserSessions(),
         getUserExchanges(),
       ]);

@@ -22,6 +22,9 @@ import {
   Info,
 } from 'lucide-react';
 
+// Matches the server rule in server/utils/chatRules.js
+const CHAT_STATUSES = ['Accepted', 'In Progress', 'Completed'];
+
 export default function MessagesPage() {
   const { user: currentUser } = useAuth();
   const { socket, connected } = useSocket();
@@ -35,6 +38,8 @@ export default function MessagesPage() {
   const [loadingExchanges, setLoadingExchanges] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [showMobileThread, setShowMobileThread] = useState(false);
+  const [olderCursor, setOlderCursor] = useState(null);
+  const [loadingOlder, setLoadingOlder] = useState(false);
 
   const chatBottomRef = useRef(null);
 
@@ -94,14 +99,10 @@ export default function MessagesPage() {
   const fetchAcceptedExchanges = async () => {
     setLoadingExchanges(true);
     try {
-      const res = await getUserExchanges();
+      // Only exchanges with chat open, filtered on the server so paging stays accurate
+      const res = await getUserExchanges({ status: CHAT_STATUSES.join(','), limit: 100 });
       if (res.success) {
-        const active = (res.data.all || []).filter(
-          (ex) =>
-            ex.status === 'Accepted' ||
-            ex.status === 'In Progress' ||
-            ex.status === 'Completed'
-        );
+        const active = res.data.all || [];
         setExchanges(active);
         if (active.length > 0) {
           setSelectedExchange(active[0]);
@@ -116,16 +117,35 @@ export default function MessagesPage() {
 
   const fetchChatMessages = async (exchangeId) => {
     setLoadingMessages(true);
+    setOlderCursor(null);
     try {
       const res = await getMessagesByExchange(exchangeId);
       if (res.success) {
         setMessages(res.data || []);
+        setOlderCursor(res.pagination?.nextCursor || null);
         scrollToBottom();
       }
     } catch (err) {
       error('Failed to load chat history');
     } finally {
       setLoadingMessages(false);
+    }
+  };
+
+  // History loads newest first; this prepends the previous page
+  const loadEarlierMessages = async () => {
+    if (!selectedExchange || !olderCursor) return;
+    setLoadingOlder(true);
+    try {
+      const res = await getMessagesByExchange(selectedExchange._id, { cursor: olderCursor });
+      if (res.success) {
+        setMessages((prev) => [...(res.data || []), ...prev]);
+        setOlderCursor(res.pagination?.nextCursor || null);
+      }
+    } catch (err) {
+      error('Failed to load earlier messages');
+    } finally {
+      setLoadingOlder(false);
     }
   };
 
@@ -351,6 +371,13 @@ export default function MessagesPage() {
 
               {/* Messages Thread Container */}
               <div className="flex-1 p-4 sm:p-5 overflow-y-auto space-y-3 bg-canvas/60">
+                {!loadingMessages && olderCursor && (
+                  <div className="flex justify-center">
+                    <Button variant="ghost" size="sm" onClick={loadEarlierMessages} loading={loadingOlder}>
+                      Load earlier messages
+                    </Button>
+                  </div>
+                )}
                 {loadingMessages ? (
                   <div className="p-8 text-center">
                     <Skeleton variant="text" count={3} />

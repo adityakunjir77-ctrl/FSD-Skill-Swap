@@ -49,4 +49,8 @@ const sessionSchema = new mongoose.Schema(
   }
 );
 
+// Paged session lists for each party
+sessionSchema.index({ proposer: 1, createdAt: -1, _id: -1 });
+sessionSchema.index({ partner: 1, createdAt: -1, _id: -1 });
+
 module.exports = mongoose.model('Session', sessionSchema);

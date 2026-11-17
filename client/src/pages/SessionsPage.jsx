@@ -27,6 +27,8 @@ export default function SessionsPage() {
 
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [nextCursor, setNextCursor] = useState(null);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   useEffect(() => {
     fetchSessions();
@@ -38,11 +40,29 @@ export default function SessionsPage() {
       const res = await getUserSessions();
       if (res.success) {
         setSessions(res.data || []);
+        setNextCursor(res.pagination?.nextCursor || null);
       }
     } catch (err) {
       error('Failed to load scheduled sessions');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Sessions are paged, newest first
+  const loadMoreSessions = async () => {
+    if (!nextCursor) return;
+    setLoadingMore(true);
+    try {
+      const res = await getUserSessions({ cursor: nextCursor });
+      if (res.success) {
+        setSessions((prev) => [...prev, ...(res.data || [])]);
+        setNextCursor(res.pagination?.nextCursor || null);
+      }
+    } catch (err) {
+      error('Failed to load older sessions');
+    } finally {
+      setLoadingMore(false);
     }
   };
 
@@ -281,6 +301,14 @@ export default function SessionsPage() {
                 </div>
               </div>
             ))
+          )}
+
+          {!loading && nextCursor && (
+            <div className="flex justify-center">
+              <Button variant="secondary" size="sm" onClick={loadMoreSessions} loading={loadingMore}>
+                Load older sessions
+              </Button>
+            </div>
           )}
         </div>
 

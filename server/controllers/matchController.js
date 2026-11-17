@@ -6,8 +6,8 @@ const { successResponse } = require('../utils/apiResponse');
 // @access  Private
 const getRecommendedMatches = async (req, res, next) => {
   try {
-    const matches = await getMatchesForUser(req.user._id);
-    return successResponse(res, 200, 'Recommended skill matches retrieved', matches);
+    const { matches, meta } = await getMatchesForUser(req.user._id, { limit: req.query.limit });
+    return successResponse(res, 200, 'Recommended skill matches retrieved', matches, { meta });
   } catch (error) {
     next(error);
   }
