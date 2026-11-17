@@ -14,6 +14,8 @@ const RECONCILE_INTERVAL_MS = 24 * 60 * 60 * 1000;
 
 const counterFields = 'ratingSum totalReviews averageRating completedExchanges';
 
+let stopRequested = false; // set during shutdown; a run stops between batches
+
 const reconcileBatch = async (users) => {
   const ids = users.map((u) => u._id);
 
@@ -75,7 +77,7 @@ const reconcileCounters = async () => {
   let fixed = 0;
   let lastId = null;
 
-  for (;;) {
+  while (!stopRequested) {
     const users = await User.find(lastId ? { _id: { $gt: lastId } } : {})
       .select(counterFields)
       .sort({ _id: 1 })
@@ -91,20 +93,39 @@ const reconcileCounters = async () => {
   return { checked, fixed };
 };
 
-const runReconciliation = async () => {
-  try {
-    const { checked, fixed } = await reconcileCounters();
-    if (fixed > 0) console.log(`[Counters] Reconciled ${fixed} of ${checked} user counters.`);
-  } catch (error) {
-    console.error('[Counters] Reconciliation failed:', error.message);
-  }
+let timer = null;
+let currentRun = null;
+
+const runReconciliation = () => {
+  if (currentRun) return currentRun; // a slow run is still going
+  currentRun = (async () => {
+    try {
+      const { checked, fixed } = await reconcileCounters();
+      if (fixed > 0) console.log(`[Counters] Reconciled ${fixed} of ${checked} user counters.`);
+    } catch (error) {
+      console.error('[Counters] Reconciliation failed:', error.message);
+    } finally {
+      currentRun = null;
+    }
+  })();
+  return currentRun;
 };
 
 // Runs once after startup, then daily. Each process runs its own schedule;
 // the conditional writes make overlapping runs harmless.
 const startCounterReconciliation = () => {
+  stopRequested = false;
   runReconciliation();
-  setInterval(runReconciliation, RECONCILE_INTERVAL_MS).unref();
+  timer = setInterval(runReconciliation, RECONCILE_INTERVAL_MS);
+  timer.unref();
 };
 
-module.exports = { reconcileCounters, startCounterReconciliation };
+// Stops the schedule; a run in progress ends after its current batch
+const stopCounterReconciliation = async () => {
+  stopRequested = true;
+  clearInterval(timer);
+  timer = null;
+  if (currentRun) await currentRun;
+};
+
+module.exports = { reconcileCounters, startCounterReconciliation, stopCounterReconciliation };

@@ -5,9 +5,10 @@ const cors = require('cors');
 const helmet = require('helmet');
 const dotenv = require('dotenv');
 const connectDB = require('./config/db');
-const { startCounterReconciliation } = require('./services/counterReconciliation');
-const { startOutboxWorker } = require('./services/outbox');
-const { getJwtSecret, getTrustProxy } = require('./config/env');
+const { closeDB } = require('./config/db');
+const { startCounterReconciliation, stopCounterReconciliation } = require('./services/counterReconciliation');
+const { startOutboxWorker, stopOutboxWorker } = require('./services/outbox');
+const { getJwtSecret, getTrustProxy, getMongoOptions } = require('./config/env');
 const { apiLimiter } = require('./middleware/rateLimiter');
 const { notFoundHandler, errorHandler } = require('./middleware/errorMiddleware');
 const { successResponse } = require('./utils/apiResponse');
@@ -30,21 +31,25 @@ const registerChatSockets = require('./sockets/chatSocket');
 // Load environment variables
 dotenv.config();
 
-// Refuse to start with a missing or publicly known signing secret, or an
-// unparseable proxy hop count
+// Refuse to start with a missing or publicly known signing secret, an
+// unparseable proxy hop count, or invalid database settings
 let trustProxy;
 try {
   getJwtSecret();
   trustProxy = getTrustProxy();
+  getMongoOptions();
 } catch (error) {
   console.error(`[Config] ${error.message}`);
   process.exit(1);
 }
 
+let shuttingDown = false;
+
 // Connect to MongoDB, then start background work: counter reconciliation and
 // the outbox worker that delivers notifications and live chat events. `io` is
 // created below, before the connection resolves.
 connectDB().then(() => {
+  if (shuttingDown) return;
   startCounterReconciliation();
   startOutboxWorker(io);
 });
@@ -113,5 +118,42 @@ const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
   console.log(`[SkillSwap Server] Running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
 });
+
+// Graceful shutdown for deploys and restarts: stop accepting connections, let
+// in-flight requests finish, stop background jobs, then close the database.
+// Outbox events not yet delivered stay pending and are sent after restart.
+const SHUTDOWN_TIMEOUT_MS = 10 * 1000;
+
+const shutdown = async (signal) => {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  console.log(`[SkillSwap Server] ${signal} received, shutting down...`);
+
+  const forceExit = setTimeout(() => {
+    console.error('[SkillSwap Server] Shutdown timed out; exiting anyway.');
+    process.exit(1);
+  }, SHUTDOWN_TIMEOUT_MS);
+  forceExit.unref();
+
+  try {
+    // Disconnects sockets and closes the HTTP server, which waits for
+    // in-flight requests; idle keep-alive connections are closed right away
+    await new Promise((resolve) => {
+      io.close(() => resolve());
+      server.closeIdleConnections?.();
+    });
+    await Promise.all([stopOutboxWorker(), stopCounterReconciliation()]);
+    await closeDB();
+    clearTimeout(forceExit);
+    console.log('[SkillSwap Server] Shutdown complete.');
+    process.exit(0);
+  } catch (error) {
+    console.error('[SkillSwap Server] Error during shutdown:', error.message);
+    process.exit(1);
+  }
+};
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
 
 module.exports = { app, server, io };

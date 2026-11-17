@@ -43,4 +43,53 @@ const getTrustProxy = () => {
   return Number(raw) || false;
 };
 
-module.exports = { getJwtSecret, isDemoDataEnabled, DEMO_ADMIN_EMAIL, getTrustProxy };
+const isLocalEnvironment = () => DEMO_ENVIRONMENTS.includes(process.env.NODE_ENV);
+
+const intFromEnv = (name, defaultValue, min, max) => {
+  const raw = (process.env[name] || '').trim();
+  if (raw === '') return defaultValue;
+  if (!/^\d+$/.test(raw) || Number(raw) < min || Number(raw) > max) {
+    throw new Error(`${name} must be a whole number from ${min} to ${max}, got "${raw}".`);
+  }
+  return Number(raw);
+};
+
+const boolFromEnv = (name, defaultValue) => {
+  const raw = (process.env[name] || '').trim().toLowerCase();
+  if (raw === '') return defaultValue;
+  if (raw !== 'true' && raw !== 'false') throw new Error(`${name} must be true or false, got "${raw}".`);
+  return raw === 'true';
+};
+
+// MongoDB driver settings. Each server process opens up to maxPoolSize
+// connections, so size it as (database connection limit / number of
+// processes) with headroom. Local runs fail over to the embedded database
+// quickly; deployments wait longer for a replica set election.
+const getMongoOptions = () => {
+  const local = isLocalEnvironment();
+  const options = {
+    maxPoolSize: intFromEnv('MONGO_MAX_POOL_SIZE', 20, 1, 500),
+    minPoolSize: intFromEnv('MONGO_MIN_POOL_SIZE', 0, 0, 500),
+    serverSelectionTimeoutMS: intFromEnv('MONGO_SERVER_SELECTION_TIMEOUT_MS', local ? 2500 : 10000, 500, 120000),
+    socketTimeoutMS: intFromEnv('MONGO_SOCKET_TIMEOUT_MS', 45000, 1000, 600000),
+    waitQueueTimeoutMS: intFromEnv('MONGO_WAIT_QUEUE_TIMEOUT_MS', 10000, 100, 120000),
+    // Deployments build indexes with `npm run db:indexes` before release
+    // rather than on every startup, where a large build would block the app
+    autoIndex: boolFromEnv('MONGO_AUTO_INDEX', local),
+  };
+
+  if (options.minPoolSize > options.maxPoolSize) {
+    throw new Error('MONGO_MIN_POOL_SIZE cannot be larger than MONGO_MAX_POOL_SIZE.');
+  }
+
+  return options;
+};
+
+module.exports = {
+  getJwtSecret,
+  isDemoDataEnabled,
+  DEMO_ADMIN_EMAIL,
+  getTrustProxy,
+  getMongoOptions,
+  isLocalEnvironment,
+};

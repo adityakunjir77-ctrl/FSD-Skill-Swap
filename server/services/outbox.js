@@ -19,6 +19,9 @@ let io = null;
 let started = false;
 let draining = false;
 let drainAgain = false;
+let stopping = false;
+let pollTimer = null;
+let currentDrain = null;
 
 // events: [{ type, payload }]. Pass the caller's transaction session.
 const enqueue = (events, session = null) =>
@@ -89,32 +92,35 @@ const processEvent = async (event) => {
 
 // Processes due events one at a time, in order. Calls made while a pass is
 // running schedule one more pass instead of running concurrently.
-const drainOutbox = async () => {
+const drainOutbox = () => {
   if (draining) {
     drainAgain = true;
-    return;
+    return currentDrain;
   }
   draining = true;
-  try {
-    do {
-      drainAgain = false;
-      for (let i = 0; i < DRAIN_LIMIT; i++) {
-        const event = await claimNext();
-        if (!event) break;
-        await processEvent(event);
-      }
-    } while (drainAgain);
-  } catch (error) {
-    console.error('[Outbox] Drain failed:', error.message);
-  } finally {
-    draining = false;
-  }
+  currentDrain = (async () => {
+    try {
+      do {
+        drainAgain = false;
+        for (let i = 0; i < DRAIN_LIMIT && !stopping; i++) {
+          const event = await claimNext();
+          if (!event) break;
+          await processEvent(event);
+        }
+      } while (drainAgain && !stopping);
+    } catch (error) {
+      console.error('[Outbox] Drain failed:', error.message);
+    } finally {
+      draining = false;
+    }
+  })();
+  return currentDrain;
 };
 
 // Called by producers after their transaction commits, so live events go out
 // immediately instead of waiting for the next poll
 const kickOutbox = () => {
-  if (started) setImmediate(drainOutbox);
+  if (started && !stopping) setImmediate(drainOutbox);
 };
 
 // Emits reach sockets on this process only; several instances need a shared
@@ -122,12 +128,32 @@ const kickOutbox = () => {
 const startOutboxWorker = (socketServer) => {
   io = socketServer;
   started = true;
-  setInterval(drainOutbox, POLL_MS).unref();
+  stopping = false;
+  pollTimer = setInterval(drainOutbox, POLL_MS);
+  pollTimer.unref();
   drainOutbox();
+};
+
+// Stops polling and waits for the event being delivered to finish. Events not
+// yet claimed stay pending for the next start or another instance.
+const stopOutboxWorker = async () => {
+  stopping = true;
+  started = false;
+  clearInterval(pollTimer);
+  pollTimer = null;
+  if (currentDrain) await currentDrain;
 };
 
 const setOutboxIo = (socketServer) => {
   io = socketServer;
 };
 
-module.exports = { enqueue, kickOutbox, drainOutbox, startOutboxWorker, setOutboxIo, MAX_ATTEMPTS };
+module.exports = {
+  enqueue,
+  kickOutbox,
+  drainOutbox,
+  startOutboxWorker,
+  stopOutboxWorker,
+  setOutboxIo,
+  MAX_ATTEMPTS,
+};
