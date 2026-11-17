@@ -6,6 +6,7 @@ const helmet = require('helmet');
 const dotenv = require('dotenv');
 const connectDB = require('./config/db');
 const { startCounterReconciliation } = require('./services/counterReconciliation');
+const { startOutboxWorker } = require('./services/outbox');
 const { getJwtSecret, getTrustProxy } = require('./config/env');
 const { apiLimiter } = require('./middleware/rateLimiter');
 const { notFoundHandler, errorHandler } = require('./middleware/errorMiddleware');
@@ -40,8 +41,13 @@ try {
   process.exit(1);
 }
 
-// Connect to MongoDB, then keep derived rating/completion counters accurate
-connectDB().then(startCounterReconciliation);
+// Connect to MongoDB, then start background work: counter reconciliation and
+// the outbox worker that delivers notifications and live chat events. `io` is
+// created below, before the connection resolves.
+connectDB().then(() => {
+  startCounterReconciliation();
+  startOutboxWorker(io);
+});
 
 const app = express();
 const server = http.createServer(app);

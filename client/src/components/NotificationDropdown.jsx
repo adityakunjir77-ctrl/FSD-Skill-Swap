@@ -12,6 +12,7 @@ export default function NotificationDropdown() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
+  const seenIds = useRef(new Set()); // notification ids already shown
 
   useEffect(() => {
     if (user) {
@@ -22,9 +23,12 @@ export default function NotificationDropdown() {
   // Real-time socket listener for incoming notifications
   useEffect(() => {
     if (socket) {
+      // Delivery is at least once, so a retried event can repeat a notification
       socket.on('new-notification', (notif) => {
+        if (seenIds.current.has(notif._id)) return;
+        seenIds.current.add(notif._id);
         setNotifications((prev) => [notif, ...prev]);
-        setUnreadCount((prev) => prev + 1);
+        setUnreadCount((count) => count + 1);
       });
 
       return () => {
@@ -48,7 +52,9 @@ export default function NotificationDropdown() {
     try {
       const res = await getUserNotifications();
       if (res.success) {
-        setNotifications(res.data.notifications || []);
+        const list = res.data.notifications || [];
+        list.forEach((n) => seenIds.current.add(n._id));
+        setNotifications(list);
         setUnreadCount(res.data.unreadCount || 0);
       }
     } catch (err) {

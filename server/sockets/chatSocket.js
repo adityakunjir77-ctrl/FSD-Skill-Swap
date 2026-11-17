@@ -1,10 +1,8 @@
-const Message = require('../models/Message');
-const Notification = require('../models/Notification');
 const ExchangeRequest = require('../models/ExchangeRequest');
 const User = require('../models/User');
 const { verifyToken } = require('../utils/generateToken');
-const { USER_SUMMARY_FIELDS } = require('../utils/userFields');
 const { isChatOpen, allowSocketMessage } = require('../utils/chatRules');
+const { createChatMessage } = require('../services/chatMessages');
 
 const OBJECT_ID_PATTERN = /^[0-9a-fA-F]{24}$/;
 
@@ -107,35 +105,15 @@ const registerChatSockets = (io) => {
         const receiverId =
           exchange.sender.toString() === socket.userId ? exchange.receiver : exchange.sender;
 
-        // Save to Database
-        const message = await Message.create({
-          exchange: exchange._id,
-          sender: sender._id,
-          receiver: receiverId,
-          content: text,
-        });
-
-        const populated = await Message.findById(message._id)
-          .populate('sender', USER_SUMMARY_FIELDS)
-          .populate('receiver', USER_SUMMARY_FIELDS);
-
-        // Broadcast to chat room
-        io.to(`exchange_${exchange._id}`).emit('receive-message', populated);
-
-        // Create Notification & send to receiver's personal user room
-        const notification = await Notification.create({
-          recipient: receiverId,
-          sender: sender._id,
-          type: 'new_message',
-          title: 'New Chat Message',
-          message: `${sender.name}: "${text.slice(0, 35)}..."`,
-          link: '/messages',
-        });
-
-        io.to(`user_${receiverId}`).emit('new-notification', notification);
-
+        // Saved with its outbox events; the outbox worker broadcasts it to the
+        // chat room and notifies the receiver
+        await createChatMessage({ exchange, sender, receiverId, text });
       } catch (error) {
-        console.error('[Socket.io Chat Error]:', error);
+        if (error.name === 'ValidationError') {
+          socket.emit('message-error', { message: 'Message could not be sent. Messages are limited to 2000 characters.' });
+          return;
+        }
+        console.error('[Socket.io Chat Error]:', error.message);
       }
     });
 

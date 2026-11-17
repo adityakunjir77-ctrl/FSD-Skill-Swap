@@ -70,7 +70,8 @@ export default function MessagesPage() {
     if (socket) {
       const handleReceiveMessage = (incomingMsg) => {
         if (selectedExchange && incomingMsg.exchange === selectedExchange._id) {
-          setMessages((prev) => [...prev, incomingMsg]);
+          // Delivery is at least once, and a REST-sent message is also echoed here
+          setMessages((prev) => (prev.some((m) => m._id === incomingMsg._id) ? prev : [...prev, incomingMsg]));
           scrollToBottom();
         }
       };
@@ -170,7 +171,7 @@ export default function MessagesPage() {
           content,
         });
         if (res.success) {
-          setMessages((prev) => [...prev, res.data]);
+          setMessages((prev) => (prev.some((m) => m._id === res.data._id) ? prev : [...prev, res.data]));
           scrollToBottom();
         }
       } catch (err) {

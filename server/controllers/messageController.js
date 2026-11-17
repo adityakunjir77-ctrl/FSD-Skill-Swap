@@ -1,7 +1,7 @@
 const Message = require('../models/Message');
 const ExchangeRequest = require('../models/ExchangeRequest');
-const Notification = require('../models/Notification');
 const { successResponse, errorResponse } = require('../utils/apiResponse');
+const { createChatMessage } = require('../services/chatMessages');
 const { USER_SUMMARY_FIELDS } = require('../utils/userFields');
 const { isChatOpen } = require('../utils/chatRules');
 const { findPage } = require('../utils/pagination');
@@ -80,26 +80,17 @@ const sendMessage = async (req, res, next) => {
 
     const receiverId = isSender ? exchange.receiver : exchange.sender;
 
-    const message = await Message.create({
-      exchange: exchangeId,
-      sender: userId,
-      receiver: receiverId,
-      content: content.trim(),
+    // Live delivery and the receiver's notification go through the outbox
+    const message = await createChatMessage({
+      exchange,
+      sender: req.user,
+      receiverId,
+      text: content.trim(),
     });
 
     const populated = await Message.findById(message._id)
       .populate('sender', USER_SUMMARY_FIELDS)
       .populate('receiver', USER_SUMMARY_FIELDS);
-
-    // Create Notification for recipient
-    await Notification.create({
-      recipient: receiverId,
-      sender: userId,
-      type: 'new_message',
-      title: 'New Message Received',
-      message: `${req.user.name} sent you a message: "${content.trim().slice(0, 40)}..."`,
-      link: '/messages',
-    });
 
     return successResponse(res, 201, 'Message sent successfully', populated);
   } catch (error) {

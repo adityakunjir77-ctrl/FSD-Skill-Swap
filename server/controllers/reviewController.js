@@ -1,9 +1,9 @@
 const Review = require('../models/Review');
 const ExchangeRequest = require('../models/ExchangeRequest');
 const User = require('../models/User');
-const Notification = require('../models/Notification');
 const { successResponse, errorResponse } = require('../utils/apiResponse');
 const { runInTransaction } = require('../utils/transactions');
+const { enqueue, kickOutbox } = require('../services/outbox');
 
 const MAX_PUBLIC_REVIEWS = 100;
 
@@ -85,18 +85,28 @@ const createReview = async (req, res, next) => {
       );
 
       await User.updateOne({ _id: revieweeId }, addRatingUpdate(stars), { session });
+
+      // The reviewee's notification commits with the review and is delivered by the outbox
+      await enqueue(
+        [
+          {
+            type: 'notification.create',
+            payload: {
+              recipient: revieweeId,
+              sender: reviewerId,
+              type: 'review_added',
+              title: 'New Rating & Review Received',
+              message: `${req.user.name} rated your exchange ${stars} stars: "${feedback.trim().slice(0, 40)}..."`,
+              link: '/profile',
+            },
+          },
+        ],
+        session
+      );
+
       return created;
     });
-
-    // Create Notification
-    await Notification.create({
-      recipient: revieweeId,
-      sender: reviewerId,
-      type: 'review_added',
-      title: 'New Rating & Review Received',
-      message: `${req.user.name} rated your exchange ${stars} stars: "${feedback.trim().slice(0, 40)}..."`,
-      link: '/profile',
-    });
+    kickOutbox();
 
     const populated = await Review.findById(review._id)
       .populate('reviewer', 'name avatar')
