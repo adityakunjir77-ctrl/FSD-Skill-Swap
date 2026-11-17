@@ -1,6 +1,15 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
+const EMAIL_MAX_LENGTH = 254;
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@.]+(\.[^\s@.]+)+$/;
+const MAX_SKILLS_PER_LIST = 20;
+
+const maxItems = (limit) => ({
+  validator: (value) => !Array.isArray(value) || value.length <= limit,
+  message: `A profile can list at most ${limit} skills here`,
+});
+
 const isAllowedAvatarUrl = (value) => {
   if (!value) return true;
   if (value.startsWith('/')) return !/^\/[/\\]/.test(value);
@@ -26,10 +35,10 @@ const userSchema = new mongoose.Schema(
       unique: true,
       lowercase: true,
       trim: true,
-      match: [
-        /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/,
-        'Please provide a valid email address',
-      ],
+      maxlength: [EMAIL_MAX_LENGTH, `Email cannot exceed ${EMAIL_MAX_LENGTH} characters`],
+      // Each part excludes the character that ends it, so matching stays linear.
+      // The old nested-quantifier pattern backtracked exponentially on long input.
+      match: [EMAIL_PATTERN, 'Please provide a valid email address'],
     },
     password: {
       type: String,
@@ -71,18 +80,14 @@ const userSchema = new mongoose.Schema(
       default: 'Weekends & Evenings',
       maxlength: [100, 'Availability cannot exceed 100 characters'],
     },
-    skillsOffered: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Skill',
-      },
-    ],
-    skillsWanted: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Skill',
-      },
-    ],
+    skillsOffered: {
+      type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Skill' }],
+      validate: maxItems(MAX_SKILLS_PER_LIST),
+    },
+    skillsWanted: {
+      type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Skill' }],
+      validate: maxItems(MAX_SKILLS_PER_LIST),
+    },
     averageRating: {
       type: Number,
       default: 5.0,
@@ -123,3 +128,5 @@ userSchema.methods.matchPassword = async function (enteredPassword) {
 };
 
 module.exports = mongoose.model('User', userSchema);
+module.exports.EMAIL_MAX_LENGTH = EMAIL_MAX_LENGTH;
+module.exports.MAX_SKILLS_PER_LIST = MAX_SKILLS_PER_LIST;

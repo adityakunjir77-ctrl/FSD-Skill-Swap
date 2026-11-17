@@ -3,6 +3,7 @@ const ExchangeRequest = require('../models/ExchangeRequest');
 const Notification = require('../models/Notification');
 const { successResponse, errorResponse } = require('../utils/apiResponse');
 const { USER_SUMMARY_FIELDS } = require('../utils/userFields');
+const { isChatOpen } = require('../utils/chatRules');
 
 // @desc    Get all chat messages for a specific exchange request
 // @route   GET /api/messages/:exchangeId
@@ -63,6 +64,10 @@ const sendMessage = async (req, res, next) => {
 
     if (!isSender && !isReceiver) {
       return errorResponse(res, 403, 'Not authorized to send messages for this exchange.');
+    }
+
+    if (!isChatOpen(exchange)) {
+      return errorResponse(res, 409, 'Chat opens once the exchange request is accepted.');
     }
 
     const receiverId = isSender ? exchange.receiver : exchange.sender;

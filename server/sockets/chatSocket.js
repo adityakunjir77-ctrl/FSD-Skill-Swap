@@ -4,6 +4,7 @@ const ExchangeRequest = require('../models/ExchangeRequest');
 const User = require('../models/User');
 const { verifyToken } = require('../utils/generateToken');
 const { USER_SUMMARY_FIELDS } = require('../utils/userFields');
+const { isChatOpen, allowSocketMessage } = require('../utils/chatRules');
 
 const OBJECT_ID_PATTERN = /^[0-9a-fA-F]{24}$/;
 
@@ -41,7 +42,7 @@ const loadActiveUser = async (socket) => {
 const loadOwnExchange = async (socket, exchangeId) => {
   if (typeof exchangeId !== 'string' || !OBJECT_ID_PATTERN.test(exchangeId)) return null;
 
-  const exchange = await ExchangeRequest.findById(exchangeId).select('sender receiver');
+  const exchange = await ExchangeRequest.findById(exchangeId).select('sender receiver status');
   if (!exchange) return null;
 
   const isParticipant =
@@ -87,11 +88,21 @@ const registerChatSockets = (io) => {
 
         if (!text) return;
 
+        if (!allowSocketMessage(socket.userId)) {
+          socket.emit('message-error', { message: 'You are sending messages too quickly. Please wait a moment.' });
+          return;
+        }
+
         const sender = await loadActiveUser(socket);
         if (!sender) return;
 
         const exchange = await loadOwnExchange(socket, exchangeId);
         if (!exchange) return;
+
+        if (!isChatOpen(exchange)) {
+          socket.emit('message-error', { message: 'Chat opens once the exchange request is accepted.' });
+          return;
+        }
 
         const receiverId =
           exchange.sender.toString() === socket.userId ? exchange.receiver : exchange.sender;

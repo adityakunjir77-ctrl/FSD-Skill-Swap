@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const { isDemoDataEnabled } = require('./env');
+const { isDemoDataEnabled, DEMO_ADMIN_EMAIL } = require('./env');
 
 let mongoMemoryServerInstance = null;
 
@@ -21,6 +21,16 @@ const connectDB = async () => {
         console.log('[MongoDB] Empty database detected. Auto-seeding initial demo records...');
         const seedDatabase = require('../seed');
         await seedDatabase(false);
+      }
+    } else {
+      // Older versions seeded this account everywhere. Its password is public, so
+      // login refuses it outside demo mode; the row itself should be deleted.
+      const User = require('../models/User');
+      if (await User.exists({ email: DEMO_ADMIN_EMAIL })) {
+        console.error(
+          `[Security] This database contains the demo admin ${DEMO_ADMIN_EMAIL}, whose password is published. ` +
+            'Sign-in is blocked for it while demo data is off. Delete it and any other seeded demo accounts.'
+        );
       }
     }
   } catch (error) {

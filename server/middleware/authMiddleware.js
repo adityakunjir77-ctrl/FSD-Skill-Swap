@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const { verifyToken } = require('../utils/generateToken');
 const { errorResponse } = require('../utils/apiResponse');
+const { isDemoDataEnabled, DEMO_ADMIN_EMAIL } = require('../config/env');
 
 const protect = async (req, res, next) => {
   let token;
@@ -23,6 +24,11 @@ const protect = async (req, res, next) => {
 
     if (!user) {
       return errorResponse(res, 401, 'User account no longer exists.');
+    }
+
+    // Tokens issued to the published demo admin stop working outside demo mode
+    if (user.email === DEMO_ADMIN_EMAIL && !isDemoDataEnabled()) {
+      return errorResponse(res, 401, 'Not authorized. Token expired or invalid signature.');
     }
 
     if (!user.isActive) {

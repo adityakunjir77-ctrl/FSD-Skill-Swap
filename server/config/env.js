@@ -17,8 +17,30 @@ const getJwtSecret = () => {
 };
 
 // Demo accounts have published passwords, so seeding and the embedded database
-// need an explicit opt-in and are never available in production.
-const isDemoDataEnabled = () =>
-  process.env.NODE_ENV !== 'production' && process.env.ENABLE_DEMO_DATA === 'true';
+// need an explicit opt-in, and only in an environment named as local. Anything
+// else, including an unset or misspelled NODE_ENV, counts as a real deployment.
+const DEMO_ENVIRONMENTS = ['development', 'test'];
 
-module.exports = { getJwtSecret, isDemoDataEnabled };
+const isDemoDataEnabled = () =>
+  DEMO_ENVIRONMENTS.includes(process.env.NODE_ENV) && process.env.ENABLE_DEMO_DATA === 'true';
+
+// Seeded accounts that a real database must never contain.
+const DEMO_ADMIN_EMAIL = 'admin@skillswap.com';
+
+// Express trusts this many proxy hops when it reads the client IP from
+// X-Forwarded-For. Too high lets clients spoof their IP and dodge rate limits,
+// so anything other than a whole number is refused rather than guessed at.
+const getTrustProxy = () => {
+  const raw = (process.env.TRUST_PROXY || '').trim();
+  if (raw === '') return false;
+
+  if (!/^\d+$/.test(raw) || Number(raw) > 10) {
+    throw new Error(
+      `TRUST_PROXY must be the number of reverse proxies in front of the app (0-10), got "${raw}".`
+    );
+  }
+
+  return Number(raw) || false;
+};
+
+module.exports = { getJwtSecret, isDemoDataEnabled, DEMO_ADMIN_EMAIL, getTrustProxy };

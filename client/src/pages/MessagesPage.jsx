@@ -70,10 +70,17 @@ export default function MessagesPage() {
         }
       };
 
+      // The server refuses messages that are too frequent or on a closed exchange
+      const handleMessageError = (payload) => {
+        error(payload?.message || 'Message could not be sent');
+      };
+
       socket.on('receive-message', handleReceiveMessage);
+      socket.on('message-error', handleMessageError);
 
       return () => {
         socket.off('receive-message', handleReceiveMessage);
+        socket.off('message-error', handleMessageError);
       };
     }
   }, [socket, selectedExchange]);

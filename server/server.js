@@ -5,7 +5,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const dotenv = require('dotenv');
 const connectDB = require('./config/db');
-const { getJwtSecret } = require('./config/env');
+const { getJwtSecret, getTrustProxy } = require('./config/env');
 const { apiLimiter } = require('./middleware/rateLimiter');
 const { notFoundHandler, errorHandler } = require('./middleware/errorMiddleware');
 const { successResponse } = require('./utils/apiResponse');
@@ -28,9 +28,12 @@ const registerChatSockets = require('./sockets/chatSocket');
 // Load environment variables
 dotenv.config();
 
-// Refuse to start with a missing or publicly known signing secret
+// Refuse to start with a missing or publicly known signing secret, or an
+// unparseable proxy hop count
+let trustProxy;
 try {
   getJwtSecret();
+  trustProxy = getTrustProxy();
 } catch (error) {
   console.error(`[Config] ${error.message}`);
   process.exit(1);
@@ -43,7 +46,7 @@ const app = express();
 const server = http.createServer(app);
 
 // Number of reverse proxies in front of the app, so rate limits see real client IPs
-app.set('trust proxy', Number(process.env.TRUST_PROXY) || false);
+app.set('trust proxy', trustProxy);
 
 // Configure Socket.io
 const io = new Server(server, {

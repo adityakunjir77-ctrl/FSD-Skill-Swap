@@ -6,7 +6,8 @@ const { PUBLIC_PROFILE_FIELDS } = require('../utils/userFields');
 
 const MAX_PUBLIC_USERS = 200;
 
-// Helper to resolve skill names to ObjectId array
+// Helper to resolve skill names to ObjectId array. Callers cap the list length
+// first, because each unknown name costs a lookup and creates a global skill.
 const resolveSkills = async (skillInputs) => {
   if (!Array.isArray(skillInputs)) return [];
   const skillIds = [];
@@ -32,7 +33,8 @@ const resolveSkills = async (skillInputs) => {
     }
   }
 
-  return skillIds;
+  // The same skill may arrive as a name and as an id; store it once
+  return [...new Map(skillIds.map((id) => [id.toString(), id])).values()];
 };
 
 // @desc    Get all active user profiles (with search & filter)
@@ -115,6 +117,12 @@ const updateUserProfile = async (req, res, next) => {
       skillsOffered,
       skillsWanted,
     } = req.body;
+
+    for (const list of [skillsOffered, skillsWanted]) {
+      if (Array.isArray(list) && list.length > User.MAX_SKILLS_PER_LIST) {
+        return errorResponse(res, 400, `You can list at most ${User.MAX_SKILLS_PER_LIST} skills in each section.`);
+      }
+    }
 
     if (name) user.name = name;
     if (bio !== undefined) user.bio = bio;

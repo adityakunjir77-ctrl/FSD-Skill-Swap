@@ -112,7 +112,7 @@ The server refuses to start unless `JWT_SECRET` is a private random value of at 
 node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
 ```
 
-`ENABLE_DEMO_DATA=true` turns on demo seeding and the embedded fallback database for local development. Both stay off when `NODE_ENV=production`, so a deployed server needs a real `MONGO_URI`. Behind a reverse proxy, set `TRUST_PROXY` to the number of proxies so rate limits see real client IPs.
+`ENABLE_DEMO_DATA=true` turns on demo seeding and the embedded fallback database for local development. Both work only when `NODE_ENV` is `development` or `test`, so any other value, including an unset one, needs a real `MONGO_URI`. Outside demo mode the server also refuses sign-in for the demo admin and warns at startup if that account exists. Behind a reverse proxy, set `TRUST_PROXY` to the number of proxies (a whole number from 0 to 10) so rate limits see real client IPs.
 
 ### Step 3: Seed Database with Demo Data (Optional)
 

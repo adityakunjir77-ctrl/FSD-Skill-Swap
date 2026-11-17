@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const generateToken = require('../utils/generateToken');
+const { isDemoDataEnabled, DEMO_ADMIN_EMAIL } = require('../config/env');
 const { successResponse, errorResponse } = require('../utils/apiResponse');
 
 // @desc    Register a new user
@@ -11,6 +12,10 @@ const registerUser = async (req, res, next) => {
 
     if (!name || typeof email !== 'string' || !email || typeof password !== 'string' || !password) {
       return errorResponse(res, 400, 'Please provide name, email, and password.');
+    }
+
+    if (email.length > User.EMAIL_MAX_LENGTH) {
+      return errorResponse(res, 400, 'Please provide a valid email address.');
     }
 
     const userExists = await User.findOne({ email: email.toLowerCase() });
@@ -56,7 +61,11 @@ const loginUser = async (req, res, next) => {
       .populate('skillsOffered')
       .populate('skillsWanted');
 
-    if (!user || !(await user.matchPassword(password))) {
+    // The demo admin's password is published, so a leftover seeded row must not
+    // grant admin access on a real deployment.
+    const isBlockedDemoAdmin = user && user.email === DEMO_ADMIN_EMAIL && !isDemoDataEnabled();
+
+    if (!user || !(await user.matchPassword(password)) || isBlockedDemoAdmin) {
       return errorResponse(res, 401, 'Invalid email or password.');
     }
 
