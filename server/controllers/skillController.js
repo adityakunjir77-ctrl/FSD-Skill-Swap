@@ -2,8 +2,9 @@ const Skill = require('../models/Skill');
 const User = require('../models/User');
 const { successResponse, errorResponse } = require('../utils/apiResponse');
 const { SEARCH_TIMEOUT_MS, toSearchPattern, exactNameRegex } = require('../utils/sanitize');
+const { findPage } = require('../utils/pagination');
 
-const MAX_SKILLS = 500;
+const MAX_SKILLS = 500; // largest page the public skill list serves
 
 // @desc    Get all skills (with search & category filtering)
 // @route   GET /api/skills
@@ -22,11 +23,19 @@ const getSkills = async (req, res, next) => {
       query.category = category;
     }
 
-    const skills = await Skill.find(query)
-      .sort({ name: 1 })
-      .limit(MAX_SKILLS)
-      .maxTimeMS(SEARCH_TIMEOUT_MS);
-    return successResponse(res, 200, 'Skills retrieved successfully', skills);
+    // Alphabetical; `cursor` loads the next page
+    const { items, pagination } = await findPage(Skill, query, {
+      field: 'name',
+      direction: 1,
+      valueType: 'string',
+      cursorParam: req.query.cursor,
+      limitParam: req.query.limit,
+      defaultLimit: 100,
+      maxLimit: MAX_SKILLS,
+      build: (q) => q.maxTimeMS(SEARCH_TIMEOUT_MS),
+    });
+
+    return successResponse(res, 200, 'Skills retrieved successfully', items, { pagination });
   } catch (error) {
     next(error);
   }

@@ -132,6 +132,8 @@ userSchema.methods.matchPassword = async function (enteredPassword) {
 userSchema.index({ isActive: 1, role: 1, skillsOffered: 1 });
 userSchema.index({ isActive: 1, role: 1, skillsWanted: 1 });
 userSchema.index({ createdAt: -1, _id: -1 });
+// Public directory: active members, newest first
+userSchema.index({ isActive: 1, role: 1, createdAt: -1, _id: -1 });
 
 module.exports = mongoose.model('User', userSchema);
 module.exports.EMAIL_MAX_LENGTH = EMAIL_MAX_LENGTH;

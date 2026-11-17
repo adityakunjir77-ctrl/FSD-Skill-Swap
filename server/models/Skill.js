@@ -45,5 +45,8 @@ const skillSchema = new mongoose.Schema(
 
 // Admin catalog, newest first
 skillSchema.index({ createdAt: -1, _id: -1 });
+// Public skill list, A-Z, optionally by category
+skillSchema.index({ name: 1, _id: 1 });
+skillSchema.index({ category: 1, name: 1, _id: 1 });
 
 module.exports = mongoose.model('Skill', skillSchema);

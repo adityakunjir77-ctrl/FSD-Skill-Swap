@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { getAllUsers } from '../services/userService';
 import { getSkillCategories } from '../services/skillService';
@@ -43,8 +43,16 @@ export default function SkillDirectoryPage() {
   // Modal
   const [exchangePartnerModal, setExchangePartnerModal] = useState(null);
 
+  const [nextCursor, setNextCursor] = useState(null);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const requestId = useRef(0);
+
   useEffect(() => {
-    fetchDirectoryData();
+    getSkillCategories()
+      .then((res) => {
+        if (res.success) setCategories(res.data);
+      })
+      .catch(() => error('Failed to load skill categories'));
   }, []);
 
   // Sync url param changes to category
@@ -55,19 +63,51 @@ export default function SkillDirectoryPage() {
     if (q) setSearchQuery(q);
   }, [searchParams]);
 
-  const fetchDirectoryData = async () => {
+  // Filtering runs on the server, so results cover the whole directory rather
+  // than the loaded pages. Typing is debounced; older responses are ignored.
+  const directoryParams = () => ({
+    search: searchQuery.trim() || undefined,
+    category: selectedCategory === 'All' ? undefined : selectedCategory,
+    experience: selectedExperience === 'All' ? undefined : selectedExperience,
+  });
+
+  useEffect(() => {
+    const timer = setTimeout(fetchDirectoryPage, searchQuery ? 300 : 0);
+    return () => clearTimeout(timer);
+  }, [searchQuery, selectedCategory, selectedExperience]);
+
+  const fetchDirectoryPage = async () => {
+    const id = ++requestId.current;
     setLoading(true);
     try {
-      const [usersRes, catRes] = await Promise.all([
-        getAllUsers(),
-        getSkillCategories(),
-      ]);
-      if (usersRes.success) setUsers(usersRes.data);
-      if (catRes.success) setCategories(catRes.data);
+      const res = await getAllUsers(directoryParams());
+      if (id !== requestId.current) return;
+      if (res.success) {
+        setUsers(res.data || []);
+        setNextCursor(res.pagination?.nextCursor || null);
+      }
     } catch (err) {
-      error('Failed to load skill directory data');
+      if (id === requestId.current) error('Failed to load skill directory data');
     } finally {
-      setLoading(false);
+      if (id === requestId.current) setLoading(false);
+    }
+  };
+
+  const loadMoreUsers = async () => {
+    if (!nextCursor) return;
+    const id = requestId.current;
+    setLoadingMore(true);
+    try {
+      const res = await getAllUsers({ ...directoryParams(), cursor: nextCursor });
+      if (id !== requestId.current) return; // filters changed meanwhile
+      if (res.success) {
+        setUsers((prev) => [...prev, ...(res.data || [])]);
+        setNextCursor(res.pagination?.nextCursor || null);
+      }
+    } catch (err) {
+      error('Failed to load more members');
+    } finally {
+      setLoadingMore(false);
     }
   };
 
@@ -81,40 +121,8 @@ export default function SkillDirectoryPage() {
     setSearchParams(searchParams);
   };
 
-  const filteredUsers = users.filter((u) => {
-    // Exclude logged in user
-    if (currentUser && u._id === currentUser._id) return false;
-
-    // Search query matching
-    const query = searchQuery.toLowerCase().trim();
-    const matchesSearch =
-      !query ||
-      u.name?.toLowerCase().includes(query) ||
-      u.bio?.toLowerCase().includes(query) ||
-      u.location?.toLowerCase().includes(query) ||
-      u.skillsOffered?.some((sk) =>
-        (typeof sk === 'object' ? sk.name : sk).toLowerCase().includes(query)
-      ) ||
-      u.skillsWanted?.some((sk) =>
-        (typeof sk === 'object' ? sk.name : sk).toLowerCase().includes(query)
-      );
-
-    // Category matching
-    const matchesCategory =
-      selectedCategory === 'All' ||
-      u.skillsOffered?.some(
-        (sk) => typeof sk === 'object' && sk.category === selectedCategory
-      ) ||
-      u.skillsWanted?.some(
-        (sk) => typeof sk === 'object' && sk.category === selectedCategory
-      );
-
-    // Experience matching
-    const matchesExperience =
-      selectedExperience === 'All' || u.experienceLevel === selectedExperience;
-
-    return matchesSearch && matchesCategory && matchesExperience;
-  });
+  // The server applies the filters; only the signed-in user is hidden here
+  const filteredUsers = users.filter((u) => !(currentUser && u._id === currentUser._id));
 
   return (
     <div className="space-y-8">
@@ -468,6 +476,14 @@ export default function SkillDirectoryPage() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {!loading && nextCursor && (
+        <div className="flex justify-center">
+          <Button variant="secondary" size="sm" onClick={loadMoreUsers} loading={loadingMore}>
+            Load more members
+          </Button>
         </div>
       )}
 
