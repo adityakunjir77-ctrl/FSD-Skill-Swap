@@ -109,7 +109,7 @@ Fourteen items remain, in priority order. Items 1 to 3 are not code changes and 
 | 11 | Limit socket messages | `send-message` has no rate limit, unlike the REST API. | `server/sockets/chatSocket.js` | Not started |
 | 12 | Two-sided completion | One party alone can mark an exchange Completed and then review the other. Decide whether both must confirm. | `server/controllers/exchangeController.js` | Not started |
 | 13 | Small UI polish | Show an error when a socket message is refused. Hide suspend and delete buttons on admin rows, which now only return 403. | `client/src/pages/MessagesPage.jsx`, `client/src/pages/AdminDashboardPage.jsx` | Not started |
-| 14 | Deployment and tooling | Serve over HTTPS, because the app itself speaks plain HTTP. Rate limits live in memory, so several server instances need a shared store. The server's 2 moderate dev-only advisories through `nodemon` remain; `npm audit fix` did not clear them. | Hosting, `server/middleware/rateLimiter.js`, `server/package.json` | Not started |
+| 14 | Deployment and tooling | Serve over HTTPS, because the app itself speaks plain HTTP. Rate limits live in memory, so several server instances need a shared store. The server's 2 moderate dev-only advisories through `nodemon` remain; `npm audit fix` did not clear them. | Hosting, `server/middleware/rateLimiter.js`, `server/package.json` | Partly done: rate limits and Socket.IO rooms are shared through Redis when REDIS_URL is set; HTTPS and the nodemon dev advisories remain |
 
 ## Instructions for the teammate
 

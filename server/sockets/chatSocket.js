@@ -86,7 +86,7 @@ const registerChatSockets = (io) => {
 
         if (!text) return;
 
-        if (!allowSocketMessage(socket.userId)) {
+        if (!(await allowSocketMessage(socket.userId))) {
           socket.emit('message-error', { message: 'You are sending messages too quickly. Please wait a moment.' });
           return;
         }

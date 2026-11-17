@@ -1,9 +1,14 @@
+// Load environment variables first: some modules (rate limiters, Redis) read
+// them as they load
+require('dotenv').config();
+
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
+const { createAdapter } = require('@socket.io/redis-adapter');
 const cors = require('cors');
 const helmet = require('helmet');
-const dotenv = require('dotenv');
+const { getRedisClients, closeRedis } = require('./config/redis');
 const connectDB = require('./config/db');
 const { closeDB } = require('./config/db');
 const { startCounterReconciliation, stopCounterReconciliation } = require('./services/counterReconciliation');
@@ -27,9 +32,6 @@ const adminRoutes = require('./routes/adminRoutes');
 
 // Socket Imports
 const registerChatSockets = require('./sockets/chatSocket');
-
-// Load environment variables
-dotenv.config();
 
 // Refuse to start with a missing or publicly known signing secret, an
 // unparseable proxy hop count, or invalid database settings
@@ -69,6 +71,17 @@ const io = new Server(server, {
     credentials: true,
   },
 });
+
+// With Redis, rooms are shared: an emit or disconnect on one instance reaches
+// sockets connected to every instance. Clients may use HTTP long polling before
+// upgrading to WebSocket, so a load balancer must keep each client on one
+// instance (sticky sessions).
+const redis = getRedisClients();
+if (redis) {
+  io.adapter(createAdapter(redis.publisher, redis.subscriber));
+} else {
+  console.log('[Socket.io] REDIS_URL not set: running as a single instance.');
+}
 
 // Register Socket.io Handlers
 registerChatSockets(io);
@@ -143,7 +156,7 @@ const shutdown = async (signal) => {
       server.closeIdleConnections?.();
     });
     await Promise.all([stopOutboxWorker(), stopCounterReconciliation()]);
-    await closeDB();
+    await Promise.all([closeDB(), closeRedis()]);
     clearTimeout(forceExit);
     console.log('[SkillSwap Server] Shutdown complete.');
     process.exit(0);

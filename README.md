@@ -80,6 +80,7 @@ SkillSwap/
 - **MongoDB**: Local MongoDB instance (`mongodb://127.0.0.1:27017`) or MongoDB Atlas URI.
   Production should use a replica set (Atlas clusters are replica sets), because reviews and exchange completions update counters inside transactions. A standalone server still works, but those writes are not atomic and the daily counter reconciliation repairs any drift. The embedded development database runs as a one-node replica set.
   Outside development, indexes are not built at startup: run `npm run db:indexes` in `server/` before each release (add `-- --drop` to remove indexes no model declares). Connection pool size and timeouts are set with the `MONGO_*` variables in `server/.env.example`. The server shuts down gracefully on `SIGTERM` or `SIGINT`: it finishes in-flight requests, stops background jobs and closes the database within 10 seconds.
+- **Running several instances**: set `REDIS_URL` on every instance. Redis shares Socket.IO rooms, so live chat, notifications and "disconnect this user" reach sockets on any instance, and it shares rate-limit counts, which also survive restarts. Configure the load balancer for sticky sessions, because Socket.IO clients may start with HTTP long polling before upgrading to WebSocket. Without `REDIS_URL` the server runs as a single instance.
 
 ### Step 1: Install Dependencies
 
