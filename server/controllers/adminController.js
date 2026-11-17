@@ -4,6 +4,7 @@ const ExchangeRequest = require('../models/ExchangeRequest');
 const Review = require('../models/Review');
 const { successResponse, errorResponse } = require('../utils/apiResponse');
 const { SEARCH_TIMEOUT_MS, toSearchPattern } = require('../utils/sanitize');
+const { prefixClauses } = require('../utils/searchTokens');
 const { findPage } = require('../utils/pagination');
 
 // Admin lists are newest first in pages of up to 200
@@ -53,14 +54,17 @@ const getAdminStats = async (req, res, next) => {
 // @access  Private/Admin
 const getAdminUsers = async (req, res, next) => {
   try {
-    const searchPattern = toSearchPattern(req.query.search);
+    const { search } = req.query;
     const query = {};
 
-    if (searchPattern) {
+    // Prefix search on name, bio and location words, or the start of the
+    // email address (stored lowercase, so the anchored regex uses its index)
+    const clauses = prefixClauses(search);
+    const emailPrefix = typeof search === 'string' ? toSearchPattern(search.toLowerCase()) : '';
+    if (clauses || emailPrefix) {
       query.$or = [
-        { name: { $regex: searchPattern, $options: 'i' } },
-        { email: { $regex: searchPattern, $options: 'i' } },
-        { location: { $regex: searchPattern, $options: 'i' } },
+        ...(clauses ? [{ $and: clauses }] : []),
+        ...(emailPrefix ? [{ email: { $regex: `^${emailPrefix}` } }] : []),
       ];
     }
 

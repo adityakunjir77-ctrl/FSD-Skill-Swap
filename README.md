@@ -81,6 +81,7 @@ SkillSwap/
   Production should use a replica set (Atlas clusters are replica sets), because reviews and exchange completions update counters inside transactions. A standalone server still works, but those writes are not atomic and the daily counter reconciliation repairs any drift. The embedded development database runs as a one-node replica set.
   Outside development, indexes are not built at startup: run `npm run db:indexes` in `server/` before each release (add `-- --drop` to remove indexes no model declares). Connection pool size and timeouts are set with the `MONGO_*` variables in `server/.env.example`. The server shuts down gracefully on `SIGTERM` or `SIGINT`: it finishes in-flight requests, stops background jobs and closes the database within 10 seconds.
 - **Running several instances**: set `REDIS_URL` on every instance. Redis shares Socket.IO rooms, so live chat, notifications and "disconnect this user" reach sockets on any instance, and it shares rate-limit counts, which also survive restarts. Configure the load balancer for sticky sessions, because Socket.IO clients may start with HTTP long polling before upgrading to WebSocket. Without `REDIS_URL` the server runs as a single instance.
+- **Search**: directory, skill and admin search match the start of words ("figm" finds Figma, "gma" does not), ignoring case and accents, using indexed search tokens instead of scanning collections. Existing records get their tokens automatically at startup.
 
 ### Step 1: Install Dependencies
 

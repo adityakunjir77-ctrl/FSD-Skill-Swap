@@ -1,7 +1,8 @@
 const User = require('../models/User');
 const Skill = require('../models/Skill');
 const { successResponse, errorResponse } = require('../utils/apiResponse');
-const { SEARCH_TIMEOUT_MS, toSearchPattern, exactNameRegex } = require('../utils/sanitize');
+const { SEARCH_TIMEOUT_MS } = require('../utils/sanitize');
+const { prefixClauses } = require('../utils/searchTokens');
 const { PUBLIC_PROFILE_FIELDS } = require('../utils/userFields');
 const { findPage } = require('../utils/pagination');
 
@@ -24,7 +25,7 @@ const resolveSkills = async (skillInputs) => {
         // Find or create skill by name
         const trimmedName = item.trim();
         if (trimmedName) {
-          let skill = await Skill.findOne({ name: exactNameRegex(trimmedName) });
+          let skill = await Skill.findByName(trimmedName);
           if (!skill) {
             skill = await Skill.create({ name: trimmedName, category: 'Other' });
           }
@@ -46,15 +47,14 @@ const resolveSkills = async (skillInputs) => {
 const getUsers = async (req, res, next) => {
   try {
     const { search, category, experience } = req.query;
-    const searchPattern = toSearchPattern(search);
     const conditions = [{ isActive: true, role: 'user' }];
 
-    // Search covers name, bio, location and the names of listed skills, so
-    // filtering happens here rather than over whichever page the client has
-    if (searchPattern) {
-      const regex = { $regex: searchPattern, $options: 'i' };
+    // Prefix search over name, bio, location and the names of listed skills:
+    // every search word must start a word in one of them (see utils/searchTokens)
+    const clauses = prefixClauses(search);
+    if (clauses) {
       const skillIds = (
-        await Skill.find({ name: regex })
+        await Skill.find({ $and: clauses })
           .select('_id')
           .limit(MAX_SEARCH_SKILLS)
           .maxTimeMS(SEARCH_TIMEOUT_MS)
@@ -63,9 +63,7 @@ const getUsers = async (req, res, next) => {
 
       conditions.push({
         $or: [
-          { name: regex },
-          { bio: regex },
-          { location: regex },
+          { $and: clauses },
           ...(skillIds.length
             ? [{ skillsOffered: { $in: skillIds } }, { skillsWanted: { $in: skillIds } }]
             : []),

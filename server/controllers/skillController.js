@@ -1,7 +1,8 @@
 const Skill = require('../models/Skill');
 const User = require('../models/User');
 const { successResponse, errorResponse } = require('../utils/apiResponse');
-const { SEARCH_TIMEOUT_MS, toSearchPattern, exactNameRegex } = require('../utils/sanitize');
+const { SEARCH_TIMEOUT_MS } = require('../utils/sanitize');
+const { prefixClauses } = require('../utils/searchTokens');
 const { findPage } = require('../utils/pagination');
 
 const MAX_SKILLS = 500; // largest page the public skill list serves
@@ -12,11 +13,12 @@ const MAX_SKILLS = 500; // largest page the public skill list serves
 const getSkills = async (req, res, next) => {
   try {
     const { search, category } = req.query;
-    const searchPattern = toSearchPattern(search);
     const query = {};
 
-    if (searchPattern) {
-      query.name = { $regex: searchPattern, $options: 'i' };
+    // Prefix search: every word must start a word of the skill name
+    const clauses = prefixClauses(search);
+    if (clauses) {
+      query.$and = clauses;
     }
 
     if (typeof category === 'string' && category && category !== 'All') {
@@ -85,7 +87,7 @@ const createSkill = async (req, res, next) => {
       return errorResponse(res, 400, 'Skill name is required.');
     }
 
-    const existingSkill = await Skill.findOne({ name: exactNameRegex(name.trim()) });
+    const existingSkill = await Skill.findByName(name.trim());
     if (existingSkill) {
       return successResponse(res, 200, 'Skill already exists', existingSkill);
     }

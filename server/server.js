@@ -13,6 +13,7 @@ const connectDB = require('./config/db');
 const { closeDB } = require('./config/db');
 const { startCounterReconciliation, stopCounterReconciliation } = require('./services/counterReconciliation');
 const { startOutboxWorker, stopOutboxWorker } = require('./services/outbox');
+const { runSearchBackfill } = require('./services/searchBackfill');
 const { getJwtSecret, getTrustProxy, getMongoOptions } = require('./config/env');
 const { apiLimiter } = require('./middleware/rateLimiter');
 const { notFoundHandler, errorHandler } = require('./middleware/errorMiddleware');
@@ -54,6 +55,7 @@ connectDB().then(() => {
   if (shuttingDown) return;
   startCounterReconciliation();
   startOutboxWorker(io);
+  runSearchBackfill();
 });
 
 const app = express();

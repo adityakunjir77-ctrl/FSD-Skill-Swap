@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+const { buildSearchTokens } = require('../utils/searchTokens');
 
 const EMAIL_MAX_LENGTH = 254;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@.]+(\.[^\s@.]+)+$/;
@@ -112,6 +113,11 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    // Prefix-search tokens from name, bio and location (see utils/searchTokens)
+    searchTokens: {
+      type: [String],
+      select: false,
+    },
   },
   {
     timestamps: true,
@@ -140,6 +146,17 @@ userSchema.index({ isActive: 1, role: 1, skillsWanted: 1 });
 userSchema.index({ createdAt: -1, _id: -1 });
 // Public directory: active members, newest first
 userSchema.index({ isActive: 1, role: 1, createdAt: -1, _id: -1 });
+// Directory and admin prefix search
+userSchema.index({ isActive: 1, role: 1, searchTokens: 1 });
+userSchema.index({ searchTokens: 1 });
+
+// Runs on create, save and insertMany, so every write path keeps them current
+userSchema.pre('validate', function (next) {
+  if (this.isNew || this.isModified('name') || this.isModified('bio') || this.isModified('location')) {
+    this.searchTokens = buildSearchTokens(this.name, this.bio, this.location);
+  }
+  next();
+});
 
 module.exports = mongoose.model('User', userSchema);
 module.exports.EMAIL_MAX_LENGTH = EMAIL_MAX_LENGTH;
