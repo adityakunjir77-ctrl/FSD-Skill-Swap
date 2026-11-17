@@ -3,6 +3,7 @@ const User = require('../models/User');
 const { successResponse, errorResponse } = require('../utils/apiResponse');
 const { USER_SUMMARY_FIELDS } = require('../utils/userFields');
 const { findPage } = require('../utils/pagination');
+const { runInTransaction } = require('../utils/transactions');
 
 const EXCHANGE_STATUSES = ExchangeRequest.schema.path('status').enumValues;
 
@@ -150,25 +151,34 @@ const updateExchangeStatus = async (req, res, next) => {
     }
 
     // Matching on the current status means only one of several concurrent
-    // requests can win, so the counters below are incremented exactly once
-    const updated = await ExchangeRequest.findOneAndUpdate(
-      { _id: exchange._id, status: exchange.status },
-      { status },
-      { new: true }
-    )
-      .populate('sender', USER_SUMMARY_FIELDS)
-      .populate('receiver', USER_SUMMARY_FIELDS);
+    // requests can win, so the counters are incremented exactly once. The status
+    // change and both counters commit together, so a crash between them cannot
+    // leave a Completed exchange that was never counted.
+    const changed = await runInTransaction(async (session) => {
+      const result = await ExchangeRequest.findOneAndUpdate(
+        { _id: exchange._id, status: exchange.status },
+        { status },
+        { new: true, session }
+      );
 
-    if (!updated) {
+      if (result && status === 'Completed') {
+        await User.updateMany(
+          { _id: { $in: [exchange.sender, exchange.receiver] } },
+          { $inc: { completedExchanges: 1 } },
+          { session }
+        );
+      }
+
+      return result;
+    });
+
+    if (!changed) {
       return errorResponse(res, 409, 'This exchange was just updated. Please refresh and try again.');
     }
 
-    if (status === 'Completed') {
-      await User.updateMany(
-        { _id: { $in: [exchange.sender, exchange.receiver] } },
-        { $inc: { completedExchanges: 1 } }
-      );
-    }
+    const updated = await ExchangeRequest.findById(changed._id)
+      .populate('sender', USER_SUMMARY_FIELDS)
+      .populate('receiver', USER_SUMMARY_FIELDS);
 
     return successResponse(res, 200, `Exchange request marked as ${status}`, updated);
   } catch (error) {

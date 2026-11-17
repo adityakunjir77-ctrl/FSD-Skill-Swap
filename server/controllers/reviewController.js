@@ -3,8 +3,27 @@ const ExchangeRequest = require('../models/ExchangeRequest');
 const User = require('../models/User');
 const Notification = require('../models/Notification');
 const { successResponse, errorResponse } = require('../utils/apiResponse');
+const { runInTransaction } = require('../utils/transactions');
 
 const MAX_PUBLIC_REVIEWS = 100;
+
+// Adds one rating to the running sum and count, then derives the average, all
+// in a single update. Accounts saved before ratingSum existed start from the
+// stored average times count until the reconciliation job sets exact values.
+const addRatingUpdate = (stars) => [
+  {
+    $set: {
+      ratingSum: {
+        $add: [
+          { $ifNull: ['$ratingSum', { $multiply: ['$averageRating', '$totalReviews'] }] },
+          stars,
+        ],
+      },
+      totalReviews: { $add: [{ $ifNull: ['$totalReviews', 0] }, 1] },
+    },
+  },
+  { $set: { averageRating: { $round: [{ $divide: ['$ratingSum', '$totalReviews'] }, 1] } } },
+];
 
 // @desc    Submit a rating and review for a completed exchange
 // @route   POST /api/reviews
@@ -48,23 +67,25 @@ const createReview = async (req, res, next) => {
       return errorResponse(res, 400, 'You have already submitted a review for this exchange.');
     }
 
-    const review = await Review.create({
-      exchange: exchangeId,
-      reviewer: reviewerId,
-      reviewee: revieweeId,
-      rating: stars,
-      feedback: feedback.trim(),
-    });
+    // The review and the reviewee's rating counters commit together, so a crash
+    // or retry cannot leave one without the other. The unique (exchange,
+    // reviewer) index rejects a concurrent duplicate and aborts the transaction.
+    const review = await runInTransaction(async (session) => {
+      const [created] = await Review.create(
+        [
+          {
+            exchange: exchange._id,
+            reviewer: reviewerId,
+            reviewee: revieweeId,
+            rating: stars,
+            feedback: feedback.trim(),
+          },
+        ],
+        { session }
+      );
 
-    // Recalculate average rating & total reviews for reviewee
-    const allReviews = await Review.find({ reviewee: revieweeId });
-    const totalReviews = allReviews.length;
-    const averageRating =
-      allReviews.reduce((acc, r) => acc + r.rating, 0) / (totalReviews || 1);
-
-    await User.findByIdAndUpdate(revieweeId, {
-      averageRating: parseFloat(averageRating.toFixed(1)),
-      totalReviews,
+      await User.updateOne({ _id: revieweeId }, addRatingUpdate(stars), { session });
+      return created;
     });
 
     // Create Notification

@@ -78,6 +78,7 @@ SkillSwap/
 - **Node.js**: v18.x or higher
 - **npm**: v9.x or higher
 - **MongoDB**: Local MongoDB instance (`mongodb://127.0.0.1:27017`) or MongoDB Atlas URI.
+  Production should use a replica set (Atlas clusters are replica sets), because reviews and exchange completions update counters inside transactions. A standalone server still works, but those writes are not atomic and the daily counter reconciliation repairs any drift. The embedded development database runs as a one-node replica set.
 
 ### Step 1: Install Dependencies
 

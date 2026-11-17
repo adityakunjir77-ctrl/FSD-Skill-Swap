@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const { isDemoDataEnabled, DEMO_ADMIN_EMAIL } = require('./env');
+const { detectTransactionSupport } = require('../utils/transactions');
 
 let mongoMemoryServerInstance = null;
 
@@ -12,6 +13,7 @@ const connectDB = async () => {
       serverSelectionTimeoutMS: 2500,
     });
     console.log(`[MongoDB] Connected successfully to host: ${conn.connection.host}`);
+    await detectTransactionSupport();
 
     // If demo data is enabled and the database is empty, seed initial demo data
     if (isDemoDataEnabled()) {
@@ -45,12 +47,16 @@ const connectDB = async () => {
     console.log('[MongoDB] Starting built-in embedded in-memory MongoDB engine...');
 
     try {
-      const { MongoMemoryServer } = require('mongodb-memory-server');
-      mongoMemoryServerInstance = await MongoMemoryServer.create();
+      // A one-node replica set, so transactions behave as they do in production
+      const { MongoMemoryReplSet } = require('mongodb-memory-server');
+      mongoMemoryServerInstance = await MongoMemoryReplSet.create({
+        replSet: { count: 1, storageEngine: 'wiredTiger' },
+      });
       const embeddedUri = mongoMemoryServerInstance.getUri();
 
       const conn = await mongoose.connect(embeddedUri);
       console.log(`[MongoDB] Embedded in-memory MongoDB online: ${conn.connection.host}`);
+      await detectTransactionSupport();
 
       // Auto-seed demo dataset into memory instance
       const seedDatabase = require('../seed');

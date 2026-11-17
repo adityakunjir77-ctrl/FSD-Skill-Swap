@@ -98,6 +98,12 @@ const userSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    // Sum of all received ratings, kept beside totalReviews so a new review
+    // updates the average in one atomic write instead of re-reading every review
+    ratingSum: {
+      type: Number,
+      default: 0,
+    },
     completedExchanges: {
       type: Number,
       default: 0,
